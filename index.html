@@ -1040,7 +1040,9 @@ render();
   var bar = document.getElementById('kko-bar');
   if (!bar) return;
   bar.hidden = false;
-  var pageUrl = location.href;
+  // location.href는 카톡에서 "다운로드 후 미리보기"로 열었을 때 실제 웹주소가 아닐 수 있어
+  // (카톡 내부 캐시 경로) 항상 실제 호스팅 주소를 고정값으로 쓴다.
+  var hostedUrl = 'https://edutogether.github.io/inky-calculator/';
   var claudeUrl = 'https://claude.ai/code/artifact/97501810-a6b8-4174-a488-a58cb62cb0f8';
   function openExternal(url){
     location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(url);
@@ -1049,24 +1051,23 @@ render();
     openExternal(claudeUrl);
   });
   document.getElementById('kko-safari').addEventListener('click', function(){
-    openExternal(pageUrl);
+    openExternal(hostedUrl);
   });
   document.getElementById('kko-chrome').addEventListener('click', function(){
     var isAndroid = /Android/i.test(ua);
     var isIOS = /iPhone|iPad|iPod/i.test(ua);
     if (isAndroid) {
-      var stripped = pageUrl.replace(/^https?:\/\//,'');
-      location.href = 'intent://' + stripped + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(pageUrl) + ';end';
+      var stripped = hostedUrl.replace(/^https?:\/\//,'');
+      location.href = 'intent://' + stripped + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(hostedUrl) + ';end';
     } else if (isIOS) {
-      var chromeUrl = pageUrl.replace(/^https:\/\//,'googlechromes://').replace(/^http:\/\//,'googlechrome://');
+      var chromeUrl = hostedUrl.replace(/^https:\/\//,'googlechromes://').replace(/^http:\/\//,'googlechrome://');
       location.href = chromeUrl;
-      setTimeout(function(){ openExternal(pageUrl); }, 900);
+      setTimeout(function(){ openExternal(hostedUrl); }, 900);
     } else {
-      openExternal(pageUrl);
+      openExternal(hostedUrl);
     }
   });
 })();
 </script>
-
 </body>
 </html>
