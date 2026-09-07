@@ -1023,25 +1023,30 @@ render();
 </script>
 
 <style>
-#kko-bar{position:fixed;left:0;right:0;bottom:0;z-index:99999;display:flex;justify-content:center;gap:18px;
-  padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:rgba(255,255,255,.97);
+#kko-bar{position:fixed;left:0;right:0;bottom:0;z-index:99999;display:flex;justify-content:center;gap:22px;
+  padding:12px 14px calc(10px + env(safe-area-inset-bottom));background:rgba(255,255,255,.97);
   border-top:1px solid #dfe4e9;box-shadow:0 -6px 20px rgba(0,0,0,.09)}
-#kko-bar button{width:52px;height:52px;border:1px solid #dfe4e9;border-radius:14px;background:#fff;
-  display:flex;align-items:center;justify-content:center;padding:0;
-  -webkit-tap-highlight-color:transparent;outline:none;
-  transition:transform .12s ease,box-shadow .12s ease,background-color .12s ease}
-#kko-bar button:active{transform:scale(.92);background-color:#f2f4f6;
-  box-shadow:inset 0 1px 3px rgba(0,0,0,.08)}
+#kko-bar button{width:56px;border:0;background:none;padding:6px 2px 4px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:5px;
+  -webkit-tap-highlight-color:transparent;outline:none;border-radius:12px;
+  transition:transform .12s ease,background-color .12s ease}
+#kko-bar button .ic{width:44px;height:44px;border:1px solid #dfe4e9;border-radius:13px;background:#fff;
+  display:flex;align-items:center;justify-content:center}
+#kko-bar button .lb{font:600 10.5px -apple-system,"Noto Sans KR",sans-serif;color:#616a74;letter-spacing:-.01em}
+#kko-bar button:active{transform:scale(.92);background-color:#f2f4f6}
 </style>
 <div id="kko-bar" hidden>
   <button id="kko-claude" aria-label="Claude">
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 2L14.2 9.2L21.5 11.5L14.2 13.8L12 21L9.8 13.8L2.5 11.5L9.8 9.2L12 2Z" fill="#D97757"/></svg>
+    <span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2L14.2 9.2L21.5 11.5L14.2 13.8L12 21L9.8 13.8L2.5 11.5L9.8 9.2L12 2Z" fill="#D97757"/></svg></span>
+    <span class="lb">Claude</span>
   </button>
   <button id="kko-safari" aria-label="Safari">
-    <svg width="28" height="28" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#fff" stroke="#0b84ff" stroke-width="1.4"/><path d="M15.5 8.5L11 11L8.5 15.5L13 13L15.5 8.5Z" fill="#ff3b30"/><path d="M11 11L13 13" stroke="#e8e8e8" stroke-width="1"/></svg>
+    <span class="ic"><svg width="26" height="26" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#fff" stroke="#0b84ff" stroke-width="1.4"/><path d="M15.5 8.5L11 11L8.5 15.5L13 13L15.5 8.5Z" fill="#ff3b30"/><path d="M11 11L13 13" stroke="#e8e8e8" stroke-width="1"/></svg></span>
+    <span class="lb">Safari</span>
   </button>
   <button id="kko-chrome" aria-label="Chrome">
-    <svg width="28" height="28" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#fff" stroke="#dfe4e9" stroke-width="1"/><path d="M12 2A10 10 0 0121 7H12V2Z" fill="#ea4335"/><path d="M21 7A10 10 0 0112 22L17 12L21 7Z" fill="#4285f4"/><path d="M3 7A10 10 0 0012 22L7 12L3 7Z" fill="#34a853"/><circle cx="12" cy="12" r="4" fill="#fff"/><circle cx="12" cy="12" r="3" fill="#4285f4"/></svg>
+    <span class="ic"><svg width="26" height="26" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#fff" stroke="#dfe4e9" stroke-width="1"/><path d="M12 2A10 10 0 0121 7H12V2Z" fill="#ea4335"/><path d="M21 7A10 10 0 0112 22L17 12L21 7Z" fill="#4285f4"/><path d="M3 7A10 10 0 0012 22L7 12L3 7Z" fill="#34a853"/><circle cx="12" cy="12" r="4" fill="#fff"/><circle cx="12" cy="12" r="3" fill="#4285f4"/></svg></span>
+    <span class="lb">Chrome</span>
   </button>
 </div>
 <script>
