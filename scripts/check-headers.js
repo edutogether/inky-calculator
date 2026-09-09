@@ -5,7 +5,11 @@
  * 헤더가 빠진 배포는 성공이 아니다. 배포 워크플로가 배포 직후 이 검사를 돌리고,
  * 하나라도 빠지면 배포를 실패로 표시한다.
  *
- * 실행: node scripts/check-headers.js https://inky-calculator.web.app/
+ * 실행: node scripts/check-headers.js https://calc.edutogether.kr/
+ *
+ * 워크플로는 **공식 주소와 Firebase 기본 주소를 둘 다** 검사한다.
+ * 같은 Hosting 을 보고 있어 보통은 결과가 같지만, 갈리면 그건 커스텀 도메인 쪽 설정만
+ * 틀어졌다는 뜻이라 그 자체가 잡아야 할 신호다.
  */
 const url = process.argv[2];
 if (!url) {

@@ -37,5 +37,10 @@ jobs:
           channelId: live
 
       # 이번 이전의 목적이 응답 헤더라, 헤더가 빠진 배포는 성공이 아니다.
-      - name: 배포된 응답에 보안 헤더가 실렸는지 확인
+      # 두 주소를 다 본다: 사람들이 쓰는 것은 공식 주소이고, Firebase 기본 주소와 결과가
+      # 갈리면 그건 커스텀 도메인 쪽 설정만 틀어졌다는 뜻이라 그 자체가 잡아야 할 신호다.
+      - name: 보안 헤더 확인 — 공식 주소
+        run: node scripts/check-headers.js https://calc.edutogether.kr/
+
+      - name: 보안 헤더 확인 — Firebase 기본 주소
         run: node scripts/check-headers.js https://inky-calculator.web.app/
