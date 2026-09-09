@@ -5,6 +5,10 @@ InKY Calculator의 변경 이력. **git 커밋 기록에서 확인되는 사실�
 
 ## 2026-09-10 (계속)
 
+- **외부 스크립트에 SRI(`integrity`)를 걸었다.** `xlsx.full.min.js`(cdnjs, 버전 고정 불변
+  파일)에 cdnjs 공식 SRI 해시와 `crossorigin="anonymous"`를 추가했다. 구글 폰트 CSS는
+  브라우저 User-Agent에 따라 다른 바이트를 돌려주는 리소스라 SRI를 걸 수 없다는 것을 확인하고
+  그대로 두었다. 헤드리스 Chrome(CDP)으로 실제 로드·`typeof XLSX`·콘솔 오류 0건을 확인했다.
 - **`applyState`가 조작된 `#q=` 값을 걸러내지 않던 문제를 고쳤다.** 2026-09-09에
   "다음 정비 때 처리"로 남겨 둔 항목이다. 고치기 전 코드로 조작된 값(문자열 sel, 음수 qty)을
   넣어 재현하니 화면이 이상한 숫자를 보이는 정도가 아니라 `render()`가 `TypeError`로 그
