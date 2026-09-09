@@ -25,6 +25,10 @@ jobs:
       - name: 권장안이 협의회비 상한을 지키는지 검사
         run: node scripts/check-recommended.js
 
+      # 돈의 부호가 뒤집히지 않았는지 — 남으면 +, 넘치면 −.
+      - name: 돈 부호 검사
+        run: node scripts/check-signs.js
+
       - name: Firebase Hosting 에 배포
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
