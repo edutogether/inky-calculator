@@ -159,8 +159,9 @@ input[type=radio]{accent-color:var(--acc);width:15px;height:15px;cursor:pointer}
 .sum .ok{color:var(--good);font-weight:700} .sum .no{color:var(--over);font-weight:700}
 .sum .rate{font-weight:700}     /* 집행률은 늘 볼드. 색 구간은 rateClass() 에서 붙인다 */
 .sum .rate.r-over{color:var(--over)}  .sum .rate.r-good{color:var(--good)}
-.sum .rate.r-warn{color:var(--warn)}  .sum .rate.r-warn2{color:var(--warn2)}
-.sum .rate.r-low{color:var(--mut)}
+.sum .rate.r-warn{color:var(--warn2)}
+/* 70% 아래는 흐린 회색 — 비활성처럼 보여야 "아직 더 써야 하는구나"로 읽힌다 */
+.sum .rate.r-low{color:var(--dim);font-weight:600}
 .brk{margin-top:2px;border-top:1px solid var(--line2);padding-top:12px}
 .brk div{cursor:pointer}
 .brk div:hover span{color:var(--acc)}
@@ -435,8 +436,8 @@ const MEET_MAX_RATIO=0.40;
 /* 협의회비로 쓸 수 있는 돈 = '남는 예산'과 '상한' 중 작은 쪽.
    자동 계산과 화면 안내가 같은 값을 말하도록 이 두 함수만 쓴다. */
 function meetRoom(goods){ return Math.min(Math.max(0,BUDGET-goods), Math.floor(BUDGET*MEET_MAX_RATIO)); }
-function perFit(goods,n,c){ const slots=Math.max(0,n)*Math.max(0,c);
-  return slots? Math.min(M.cap, Math.floor(meetRoom(goods)/slots/M.unit)*M.unit) : 0; }
+function perFit(goods,n,c,unit){ const slots=Math.max(0,n)*Math.max(0,c), u=unit||M.unit;
+  return slots? Math.min(M.cap, Math.floor(meetRoom(goods)/slots/u)*u) : 0; }
 const M={n:15,c:2,cap:30000,unit:1000,auto:true,per:0};   // 협의회 2회 기준, 인당 상한 30,000원
 D.forEach((it,i)=>{it.on=!it.off; it.sel=Math.max(0,it.o.findIndex(o=>o.d)); it.qty=it.q; it.id=i;});
 // 공통 수량을 참여 부스에 고르게 나눈다. 남는 것은 앞 부스(①)부터 한 개씩 더 준다.
@@ -556,14 +557,13 @@ show(CUR);
 
 /* 집행률 색 구간 (2026-09-09 대표 확정).
    **예산을 많이 쓸수록 좋은 것**이고 적게 쓰면 경고다 — 거꾸로 읽지 말 것.
-   경계값은 위쪽 구간에 넣는다: 정확히 100%는 빨강, 90%는 초록, 80%는 노랑, 70%는 주황.
+   경계값은 위쪽 구간에 넣는다: 정확히 100%는 빨강, 90%는 초록, 70%는 주황.
    색은 팔레트 토큰만 쓴다. 구간이 바뀌면 이 함수 안에서만 고친다. */
 function rateClass(pct){
   if(pct>=100) return ' r-over';    // 초과 — 빨강
   if(pct>=90)  return ' r-good';    // 초록
-  if(pct>=80)  return ' r-warn';    // 노랑
-  if(pct>=70)  return ' r-warn2';   // 주황
-  return ' r-low';                  // 70% 아래 — 진한 회색
+  if(pct>=70)  return ' r-warn';    // 주황
+  return ' r-low';                  // 70% 아래 — 흐린 회색(일부러 덜 보이게)
 }
 
 let LAST_TOT=0;                 // 초과 안내가 화면 글자를 되읽지 않도록 마지막 합계를 들고 있는다
@@ -1007,7 +1007,7 @@ const $=id=>document.getElementById(id);
 const PER_MAX=30000, PER_STEP=500;
 /* 인당 상한의 근거. 문구와 링크를 한 곳에 모아 둔다 — 연도나 근거가 바뀌면 여기만 고친다. */
 const PER_BASIS={
-  why:'공직자 대상 간담회 등 접대성 업무추진비는 1인 1회당 30,000원 이하예요'
+  why:'공직자 대상 간담회 등 접대성 업무추진비는 1인 1회당 30,000원 이하에요'
      +'(공직자가 아닌 사람은 40,000원). 협의회 참석자는 공직자라서 30,000원이 기준이에요.',
   ref:'인천광역시교육청 학교회계 예산편성 기본지침 (2024학년도 기준)',
   url:'https://www.ice.go.kr/upload/people/na/bbs_1656/2024/08/e94ca412f8015c333c8621e7e5e2344c.pdf'
@@ -1029,53 +1029,69 @@ function fixPer(v){
   e.target.value=F(ok);
   if(ok!==raw){
     if(raw>PER_MAX)
-      dialog('인당 지원금액은 30,000원까지예요',
-        `3만원 이하로 다시 조정해 주세요. ${F(raw)}원을 적으셔서 ${F(ok)}원으로 맞춰 뒀어요.\n\n`
+      dialog('인당 지원금액을 초과하였습니다 !',
+        '30,000원 이하로 다시 조정해 주세요.\n\n'
         +PER_BASIS.why, null, null, PER_BASIS);
     else
       dialog('500원 단위로 맞췄어요',
-        `${F(raw)}원을 ${F(ok)}원으로 정리했어요. 계산을 깔끔하게 하려는 것이고, 다시 고치실 수 있어요.`, null);
+        '계산을 깔끔하게 하려고 500원 단위로 정리했어요. 다시 고치셔도 됩니다.', null);
   }
   render();
 }));
 /* 자동 계산 : 쓸 수 있는 돈을 **사람이 보기에 자연스러운 조합**으로 나눈다.
    대표님이 준 현실 분포(2026-09-09)를 탐색 순서로 쓴다 —
    협의회는 1회가 70%, 1~2회가 90%이고, 인원은 10~20명이 90%다.
-   그래서 억지로 구석을 찾지 않고 **흔한 쪽을 먼저** 본다:
+   사람은 **5·0으로 떨어지는 인원**을 가장 깔끔하게 본다는 대표님 말씀에 따라 그것을 먼저 본다:
      · 지금 사람이 맞춰 둔 조합을 가장 먼저 본다(그대로 되면 건드리지 않는다)
-     · 그다음 횟수 1회 → 2회 → 3회, 각 횟수에서 인원 20~10명 → 9~1명
+     · 그다음 횟수 1회 → 2회 → 3회, 각 횟수에서 **인원 20·15·10·5명** → 그 밖의 인원
    조건은 **인당이 목표선(10,000원) 이상**이고, 그중 **쓸 돈을 가장 알뜰히 쓰는**(남는 돈이 가장
    적은) 조합을 고른다. 같으면 먼저 본 것(= 더 흔한 것)이 이긴다.
-   · 인당 상한은 30,000원, 절사 단위는 1,000원 고정(자동 계산이 손대도 되는지 대표님 확정 전).
+   · 인당 상한은 30,000원.
+   · 절사 단위는 1,000원이 기본이다. **500원은 마지막 수단**으로, 남는 돈을 실제로 더 줄일 수
+     있을 때만 쓴다(목표선을 맞추는 데는 도움이 안 된다 — 10,000원이 두 단위 모두의 배수라
+     1,000원으로 못 맞추면 500원으로도 못 맞춘다). 바꿨으면 안내에 명시한다.
    · 목표선을 맞출 조합이 아예 없으면 멈추고 알린다.
    사람이 「자동 계산」을 눌렀을 때만 돌고, 인원·횟수를 바꿨으면 무엇을 바꿨는지 알려 준다. */
 const PER_GOAL_LOW=10000;                 // 인당 목표선(규칙이 아니라 목표다 — 1만~1.5만원 선)
 const C_ORDER=[1,2,3];                    // 1회가 70%, 1~2회가 90%
-const N_COMMON=20, N_COMMON_LOW=10;       // 인원은 10~20명이 90%
+const N_ROUND=[20,15,10,5];               // 5·0으로 떨어지는 인원을 먼저
+const N_ETC=[19,18,17,16,14,13,12,11,9,8,7,6,4,3,2,1];
 function autoFit(){
   const goods=D.reduce((t,it)=>t+(it.on?it.o[it.sel].p*it.qty:0),0);
   /* 쓸 수 있는 돈은 '남는 예산'과 '협의회비 상한' 중 **작은 쪽**이다.
      이걸 빼먹으면 자동 계산이 상한을 넘는 값을 만들어 놓고, 곧바로 자기 앱이
-     '상한을 넘었다'고 경고하는 상태가 된다(실제로 그렇게 짰다가 검증에서 잡혔다). */
+     '상한을 넘았다'고 경고하는 상태가 된다(실제로 그렇게 짰다가 검증에서 잡혔다). */
   const room=meetRoom(goods);
   const from={n:Math.max(1,M.n), c:Math.max(1,M.c)};
-  const nOrder=[];
-  for(let x=N_COMMON;x>=N_COMMON_LOW;x--) nOrder.push(x);   // 흔한 구간을 먼저, 큰 쪽부터
-  for(let x=N_COMMON_LOW-1;x>=1;x--) nOrder.push(x);        // 그래도 안 되면 작은 인원
   const cands=[from];
-  for(const c of C_ORDER) for(const n of nOrder) cands.push({n,c});
-  let best=null;
-  for(const cd of cands){
-    const per=perFit(goods,cd.n,cd.c);
-    if(per<PER_GOAL_LOW) continue;
-    const left=room-per*cd.n*cd.c;
-    if(!best||left<best.left) best={n:cd.n,c:cd.c,per,left};   // 같으면 먼저 본 것(더 흔한 것)이 이긴다
+  for(const c of C_ORDER) for(const n of N_ROUND) cands.push({n,c});
+  for(const c of C_ORDER) for(const n of N_ETC)   cands.push({n,c});
+  /* 절사 단위별로 가장 알뜰한 조합을 찾는다. 같은 남는 돈이면 먼저 본 것(= 더 흔한 조합)이 이긴다. */
+  const search=u=>{
+    let b=null;
+    for(const cd of cands){
+      const per=perFit(goods,cd.n,cd.c,u);
+      if(per<PER_GOAL_LOW) continue;
+      const left=room-per*cd.n*cd.c;
+      if(!b||left<b.left) b={n:cd.n,c:cd.c,per,left,unit:u};
+    }
+    return b;
+  };
+  /* 500원 단위는 **마지막 수단**이다. 목표선을 맞추는 데는 도움이 되지 않고
+     (10,000원이 두 단위 모두의 배수라 1,000원으로 못 맞추면 500원으로도 못 맞춘다),
+     쓰이는 경우는 **남는 돈을 실제로 더 줄일 수 있을 때뿐**이다. 그때만 바꾼다. */
+  let best=search(M.unit);
+  if(M.unit===1000 && (!best || best.left>0)){
+    const half=search(500);
+    if(half && (!best || half.left<best.left)) best=half;
   }
   if(!best) return {ok:false};
+  const unitChanged = best.unit!==M.unit;
   M.n=best.n; M.c=best.c; M.per=best.per; M.auto=false;
+  if(unitChanged){ M.unit=best.unit; segOn(best.unit===500?'u500':'u1000', best.unit===500?'u1000':'u500'); }
   $('mN').value=best.n; $('mC').value=best.c;
-  return {ok:true, per:best.per, left:best.left,
-          changed:(best.n!==from.n||best.c!==from.c), from, to:{n:best.n,c:best.c}};
+  return {ok:true, per:best.per, left:best.left, unit:best.unit, unitChanged,
+          changed:(best.n!==from.n||best.c!==from.c||unitChanged), from, to:{n:best.n,c:best.c}};
 }
 function segOn(a,b){$(a).classList.add('on');$(b).classList.remove('on');}
 $('u1000').onclick=()=>{M.unit=1000;segOn('u1000','u500');render();};
@@ -1100,6 +1116,7 @@ $('mAuto').onclick=()=>{
     const moved=[];                          // 실제로 바뀐 것만 말한다
     if(r.from.c!==r.to.c) moved.push(`협의회 횟수를 ${r.from.c}회 → ${r.to.c}회로`);
     if(r.from.n!==r.to.n) moved.push(`인원을 ${r.from.n}명 → ${r.to.n}명으로`);
+    if(r.unitChanged) moved.push('절사 단위를 500원으로');   // 1,000원으로 안 맞을 때만
     dialog(moved.length>1?'인원과 횟수를 함께 맞췄어요':'설정을 하나 바꿔 맞췄어요',
       `인당 ${F(r.per)}원이 되도록 ${moved.join(", ")} 바꿨어요.\n\n`
       +'원하는 값이 있으면 직접 고치셔도 돼요 — 그 뒤에는 그대로 유지됩니다.', null);
@@ -1147,9 +1164,9 @@ function meetOverRatio(){
 }
 function warnMeetRatio(what){
   const o=meetOverRatio(); if(!o) return false;
-  dialog('협의회비가 예산의 '+Math.round(MEET_MAX_RATIO*100)+'%를 넘어요',
-    `지금 협의회비가 ${F(o.meet)}원으로 배정 예산의 ${(o.ratio*100).toFixed(1)}%예요. `
-    +`${Math.round(MEET_MAX_RATIO*100)}% 안에서 써야 하니 ${F(Math.floor(BUDGET*MEET_MAX_RATIO))}원까지가 한도예요.\n\n`
+  dialog('협의회비가 상한을 초과하였습니다 !',
+    `협의회비는 배정 예산의 ${Math.round(MEET_MAX_RATIO*100)}% 안에서 써야 해요 — `
+    +`${F(Math.floor(BUDGET*MEET_MAX_RATIO))}원까지입니다. 지금은 ${(o.ratio*100).toFixed(1)}%예요.\n\n`
     +'물품을 더 담아 남는 예산을 줄이거나, 협의회비의 인당 지급액·인원·횟수를 낮춰 주세요.\n\n'
     +(what?what+'은 그대로 진행됩니다 — 막지는 않아요.':''), null);
   return true;
@@ -1161,9 +1178,8 @@ tabs.addEventListener('click',e=>{
   if(over<=0){ if(meetOverRatio()){ meetWarned=true; warnMeetRatio(''); } return; }
   meetWarned=true;
   if(warnMeetRatio('')) return;
-  dialog('예산이 '+F(over)+'원 넘었어요',
-    '지금 물품과 협의회비를 합치면 배정 예산 1,500,000원을 넘어요.\n\n'
-    +'협의회비의 지급액을 직접 줄이셔도 되고, 오른쪽 「자동 계산」을 누르시면 '
+  dialog('배정 예산을 초과하였습니다 !',
+    '협의회비의 지급액을 직접 줄이셔도 되고, 오른쪽 「자동 계산」을 누르시면 '
     +'남는 예산에 맞춰 인당 금액을 한 번에 맞춰 드려요.', null);
 });
 </script>
