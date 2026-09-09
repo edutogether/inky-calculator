@@ -6,9 +6,10 @@
 ## 저장소 요약
 
 - `index.html` **한 파일이 전부다.** 빌드·번들·의존성 설치 없음. 나머지 파일은 배포·검사 설정이다.
-- 라이브: https://edutogether.github.io/inky-calculator/ (GitHub Pages, 현재 공식 주소)
-- 이전 중: **Firebase Hosting**(프로젝트 `inky-calculator`) → https://inky-calculator.web.app
-  최종 주소는 `calc.edutogether.kr`이 된다. 도메인이 붙기 전까지 두 주소가 같은 내용을 서빙한다.
+- **라이브: https://calc.edutogether.kr** — 공식 주소다. Firebase Hosting(프로젝트·사이트 모두
+  `inky-calculator`)이 서빙하고, `https://inky-calculator.web.app` 으로도 같은 것이 열린다.
+- 옛 주소 `edutogether.github.io/inky-calculator`(GitHub Pages)는 **내리는 중이다.**
+  코드·문서에는 더 이상 남아 있지 않다. 되살릴 일이 없다 — 새로 쓰지 말 것.
 - 외부 리소스는 cdnjs의 xlsx / html2canvas / jspdf + Google Fonts **뿐이어야 한다.**
   (과거 원본에 `lc.getunicorn.org` 스크립트가 섞여 있었다 — 기기의 VPN류 앱이 주입한 것으로 추정, 제거했다.
   **주입원은 아직 이 PC에서 동작 중이다** — 이 PC의 브라우저로 페이지를 열면 지금도 그 스크립트가
@@ -45,19 +46,27 @@
 (아티팩트 주소, `x-safari-https://…`, `googlechromes://…`).
 `./` 같은 **상대 경로를 쓰면 미리보기 화면에서는 갈 곳이 없어 아무 반응도 없다.** 실제로 있었던 버그다.
 
-## 3. 캐시 버전 값(`?v=YYYYMMDDx`)을 배포할 때마다 올릴 것
+## 3. 캐시 버전 값(`?v=…`)은 없어졌다 — 다시 만들지 말 것
 
-GitHub Pages가 HTML에 `Cache-Control: max-age=600`을 준다. **Safari가 특히 옛 화면을 오래 붙잡는다.**
-그래서 `#nojs` 카드의 Safari/Chrome 링크에 버전 값이 박혀 있다.
+GitHub Pages는 응답 헤더를 줄 수 없어 HTML에 `Cache-Control: max-age=600`이 붙었고,
+**Safari가 특히 옛 화면을 오래 붙잡았다.** 그래서 `#nojs` 카드 링크에 `?v=YYYYMMDDx` 값을 박고
+배포할 때마다 손으로 올리는 방식을 썼다. 올리는 걸 잊어 공유된 파일에서 옛 화면이 열린 적이 있다.
 
-> **내용을 바꿔 배포할 때마다 이 값을 올려라.** 안 올리면 이미 공유된 파일에서 옛 화면이 열린다.
-> 현재 값은 `index.html`에서 `?v=` 로 검색하면 나온다(예: `?v=20260908e` → 다음은 `20260908f`).
+**Firebase Hosting으로 옮기면서 이 방식을 걷어냈다.** 이제 `firebase.json`이
+`Cache-Control: no-cache`를 직접 주므로 브라우저가 매번 새로 확인한다. 손으로 관리하던 값이
+사라졌으니 **다시 만들지 말 것** — 캐시 문제가 보이면 버전 값을 붙이는 게 아니라
+응답 헤더를 확인한다(`node scripts/check-headers.js https://calc.edutogether.kr/`).
 
 ## 4. 아티팩트와 호스팅은 사본 두 개다
 
 클로드 아티팩트 사본(주소는 CLAUDE.md 참고)과 호스팅 `index.html`은 **각각 따로 존재한다.**
-호스팅 파일을 고쳤으면 `<body>`~`</body>` 사이를 잘라 아티팩트로 **다시 발행해야** 양쪽이 같아진다.
-(아티팩트에는 `<html>/<head>/<body>` 태그를 넣으면 안 된다.)
+호스팅 파일을 고쳤으면 아티팩트로 **다시 발행해야** 양쪽이 같아진다.
+아티팩트에는 `<!doctype>`·`<html>`·`<head>`·`<body>` 태그를 넣으면 안 된다.
+
+> **`<body>`~`</body>` 사이만 잘라내면 안 된다.** `<head>`에 있는 작은 `<style>` 블록
+> (`:root{color-scheme:light dark}` …)까지 **앞에 붙여야 한다.** 그게 빠지면 아티팩트 사본만
+> 다크 모드 선언을 잃는다. `<style>`은 본문에 있어도 정상 적용되므로 그대로 앞에 두면 된다.
+> 나머지(`<link>` 폰트, `<script src>` 3개)는 이미 `<body>` 안에 있다.
 
 ## 5. 아티팩트에서 인쇄가 안 되는 건 코드 문제가 아니다
 
@@ -99,10 +108,10 @@ CSP가 차단한다. 스타일은 `<style>` 블록에 규칙으로 넣고, 핸�
 ## 명령
 
 - 빌드·번들·의존성 설치 **없음**(단일 정적 파일). 검사는 `node scripts/check-csp.js` 하나뿐이다.
-- 배포: `main`에 push → **Firebase Hosting**(GitHub Actions, `.github/workflows/firebase-hosting.yml`)과
-  **GitHub Pages**에 모두 반영된다. 이전 기간 동안 두 주소가 같은 내용을 서빙한다.
+- 배포: `main`에 push → **Firebase Hosting**(GitHub Actions, `.github/workflows/firebase-hosting.yml`).
 - 손으로 배포: `node scripts/check-csp.js && firebase deploy --only hosting --project inky-calculator`
-- 배포 뒤 확인: `node scripts/check-headers.js https://inky-calculator.web.app/`
+  배포 로그의 파일 수가 **`found 1 files`** 인지 볼 것(`index.html` 하나만 올라가야 한다).
+- 배포 뒤 확인: `node scripts/check-headers.js https://calc.edutogether.kr/`
   보안 헤더 5종과 `Cache-Control: no-cache` 가 실제 응답에 있는지 본다. 워크플로도 배포 직후 이걸
   돌리고, 하나라도 빠지면 배포를 실패로 표시한다 — **헤더가 이번 이전의 목적이기 때문이다.**
 - 커밋 메시지 형식: `type: 한글 설명 (승인 Bumm M/D)` — type은 feat/fix/docs/chore/refactor/test.

@@ -3,11 +3,9 @@
 제4회 인천어린이청소년영화제(InKY) **부스 물품 구매 견적 계산기**.
 필요한 물품을 골라 수량을 정하면 예산 **1,500,000원** 안에 들어오는지 바로 계산해 준다.
 
-- **라이브**: https://edutogether.github.io/inky-calculator/
-- **이전 중**: Firebase Hosting(https://inky-calculator.web.app)으로 옮기는 중이다.
-  최종 주소는 `calc.edutogether.kr`이 된다.
+- **라이브**: https://calc.edutogether.kr
 - **구성**: `index.html` 한 파일이 전부다. 빌드·번들·의존성 설치 없음.
-- **배포**: `main`에 push하면 Firebase Hosting과 GitHub Pages에 모두 반영된다.
+- **배포**: `main`에 push하면 Firebase Hosting에 반영된다.
 
 ## 기능
 
