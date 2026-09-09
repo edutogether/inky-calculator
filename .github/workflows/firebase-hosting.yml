@@ -21,6 +21,11 @@ jobs:
           # 검사 스크립트를 돌릴 Node. 20 은 2026-04 로 지원이 끝나 러너와 같은 24 로 맞춘다.
           node-version: '24'
 
+      # vitest 의존성(devDependencies) 설치 — 배포 산출물이 아니라 검사용이라
+      # firebase.json 의 ignore 목록에서 node_modules·package.json·tests/ 를 뺐다.
+      - name: 검사 의존성 설치
+        run: npm ci
+
       - name: CSP 해시가 index.html 과 맞는지 검사
         run: node scripts/check-csp.js
 
@@ -31,6 +36,12 @@ jobs:
       # 돈의 부호가 뒤집히지 않았는지 — 남으면 +, 넘치면 −.
       - name: 돈 부호 검사
         run: node scripts/check-signs.js
+
+      # 2026-09-09에 손으로 눌러 확인한 7가지 상황(부호 양쪽·0원 경계값·집행률/게이지 색·
+      # 구분 번호·자동 계산·주소 왕복)을 vitest 로 고정했다(tests/scenarios.test.js).
+      # index.html 을 jsdom 에 그대로 실행시켜 render() 가 그리는 화면까지 검사한다.
+      - name: 시나리오 테스트 (vitest)
+        run: npm test
 
       - name: Firebase Hosting 에 배포
         uses: FirebaseExtended/action-hosting-deploy@v0

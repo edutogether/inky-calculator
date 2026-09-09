@@ -1,3 +1,7 @@
 # Firebase CLI 가 배포할 때 만드는 로컬 캐시
 .firebase/
 firebase-debug.log
+
+# vitest·scripts/check-*.js 를 돌리기 위한 개발 도구(package.json)가 받는 의존성.
+# index.html 은 단일 파일로 완결되므로 이건 배포에 필요 없다.
+node_modules/

@@ -1,0 +1,21 @@
+{
+  "name": "inky-calculator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "제4회 인천어린이청소년영화제(InKY) 부스 물품 구매 견적 계산기. index.html 한 파일이 전부다 — 빌드·번들 없음. 이 package.json은 배포 산출물이 아니라 검사(vitest·scripts/check-*.js)를 돌리기 위한 개발 도구다.",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edutogether/inky-calculator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/edutogether/inky-calculator/issues"
+  },
+  "homepage": "https://github.com/edutogether/inky-calculator#readme",
+  "devDependencies": {
+    "jsdom": "^30.0.1",
+    "vitest": "^3.2.7"
+  }
+}
