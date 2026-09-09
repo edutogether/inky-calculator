@@ -1,0 +1,4 @@
+# CSP 해시가 index.html 의 바이트 그대로에 걸려 있다. 체크아웃 환경(Windows 의
+# core.autocrlf 등)에 따라 줄바꿈이 CRLF 로 바뀌면 해시가 어긋나 배포된 화면이 통째로
+# 죽는다. 그래서 줄바꿈을 어디서 체크아웃하든 LF 로 못박는다.
+* text=auto eol=lf

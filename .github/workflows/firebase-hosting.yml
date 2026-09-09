@@ -1,0 +1,29 @@
+# main 에 push 되면 Firebase Hosting(프로젝트 inky-calculator)에 배포한다.
+# 배포 전에 CSP 해시 검사를 먼저 돌린다 — index.html 을 고치고 firebase.json 의 해시를
+# 갱신하지 않은 채 배포하면 호스팅된 화면이 통째로 죽기 때문에, 그 경우 배포를 멈춘다.
+name: Firebase Hosting 배포
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: CSP 해시가 index.html 과 맞는지 검사
+        run: node scripts/check-csp.js
+
+      - name: Firebase Hosting 에 배포
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_INKY_CALCULATOR }}
+          projectId: inky-calculator
+          channelId: live

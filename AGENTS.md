@@ -5,11 +5,16 @@
 
 ## 저장소 요약
 
-- `index.html` **한 파일이 전부다.** 빌드·테스트·린트 없음. 커밋하면 GitHub Pages가 그대로 서빙한다.
-- 라이브: https://edutogether.github.io/inky-calculator/ (`main` 브랜치 루트)
+- `index.html` **한 파일이 전부다.** 빌드·번들·의존성 설치 없음. 나머지 파일은 배포·검사 설정이다.
+- 라이브: https://edutogether.github.io/inky-calculator/ (GitHub Pages, 현재 공식 주소)
+- 이전 중: **Firebase Hosting**(프로젝트 `inky-calculator`) → https://inky-calculator.web.app
+  최종 주소는 `calc.edutogether.kr`이 된다. 도메인이 붙기 전까지 두 주소가 같은 내용을 서빙한다.
 - 외부 리소스는 cdnjs의 xlsx / html2canvas / jspdf + Google Fonts **뿐이어야 한다.**
-  (과거 원본에 `lc.getunicorn.org` 스크립트가 섞여 있었다 — 기기의 VPN류 앱이 주입한 것으로 추정, 제거했다.)
-- **2026-11-15까지만 운영한다.** 그날 예약 작업이 Pages를 내리고 저장소를 아카이브한다.
+  (과거 원본에 `lc.getunicorn.org` 스크립트가 섞여 있었다 — 기기의 VPN류 앱이 주입한 것으로 추정, 제거했다.
+  **주입원은 아직 이 PC에서 동작 중이다** — 이 PC의 브라우저로 페이지를 열면 지금도 그 스크립트가
+  DOM에 끼어든다. 서버가 주는 파일에는 없다. 브라우저로 검증할 때 이걸 앱의 문제로 착각하지 말 것.)
+- **2026-11-15까지만 운영한다.** 그날 예약 작업이 저장소를 아카이브한다. Firebase로 옮긴 뒤에는
+  **Hosting 사이트와 `calc.edutogether.kr` DNS 레코드까지 함께 정리해야 한다**(남기면 서브도메인 탈취 위험).
 
 ## 이 파일이 열리는 네 가지 경로 — 전부 다르게 동작한다
 
@@ -22,7 +27,7 @@
 
 ---
 
-# 반드시 지킬 것 — 아래 다섯 가지는 전부 실제로 사고가 났던 지점이다
+# 반드시 지킬 것 — 1~5번은 전부 실제로 사고가 났던 지점이다
 
 ## 1. 카톡 파일 미리보기는 자바스크립트를 아예 실행하지 않는다
 
@@ -61,19 +66,41 @@ GitHub Pages가 HTML에 `Cache-Control: max-age=600`을 준다. **Safari가 특�
 안내창이 호스팅 주소로 유도하는 것이 정해진 해법이다.
 **파일 내려받기는 정상 동작하므로** 안내 문구에 "저장이 막혀 있다"고 쓰지 않는다.
 
+## 6. `index.html`을 고치면 `firebase.json`의 CSP 해시도 같이 고쳐야 한다
+
+Firebase Hosting이 응답 헤더로 CSP를 준다. 이 앱은 CSS·JS를 밖으로 뺄 수 없어서(1번 참고 —
+카톡으로 보낸 **파일 한 개**가 그대로 동작해야 한다) 인라인 블록마다 **sha256 해시**를
+`firebase.json`에 적어 두는 방식을 쓴다. 그래서:
+
+> **`index.html`의 인라인 `<style>`·`<script>` 안을 한 글자라도 고치면 해시가 달라진다.**
+> 갱신하지 않고 배포하면 **호스팅된 화면이 통째로 죽는다**(스크립트가 전부 차단된다).
+
+혼자 조용히 나지 않도록 검사를 붙여 뒀다. **고친 뒤 반드시 돌릴 것** — 배포 워크플로도 이걸
+먼저 돌리고 실패하면 배포를 멈춘다. 새 해시 값을 이 명령이 그대로 알려 준다.
+
+```
+node scripts/check-csp.js
+```
+
+같은 이유로 **인라인 `style="…"` 속성과 `onclick=` 같은 인라인 핸들러를 새로 만들지 말 것.**
+CSP가 차단한다. 스타일은 `<style>` 블록에 규칙으로 넣고, 핸들러는 JS에서 붙인다.
+(자바스크립트가 `el.style.…`로 값을 넣는 것은 CSP 대상이 아니므로 그대로 써도 된다.)
+
 ---
 
 ## 그 밖의 주의
 
-- **줄바꿈**: `index.html`은 git이 CRLF로 체크아웃한다. 스크립트로 여러 줄 문자열을 치환할 때
-  먼저 LF로 정규화하지 않으면 **매칭이 조용히 실패한다.**
+- **줄바꿈**: 줄바꿈은 `.gitattributes`가 **LF로 못박아** 둔다 — CSP 해시가 파일 바이트에
+  걸려 있어 체크아웃 환경에 따라 CRLF가 되면 배포된 화면이 죽기 때문이다. 이 설정을 풀지 말 것.
 - **견적 상태 공유**: `stateStr()` 이 현재 화면 상태(항목 on/off·선택 상품·수량·협의회 설정)를
   base64로 압축해 주소에 싣고, `applyState()` 가 `#q=…` 로 들어온 주소를 복원한다.
   항목 37개 기준 전체 주소 약 500자.
 
 ## 명령
 
-- 테스트·린트·빌드 **없음**(단일 정적 파일).
-- 배포: `main`에 push → GitHub Pages 자동 반영(1~3분).
-- 확인: `curl -s "https://edutogether.github.io/inky-calculator/?v=$(date +%s)" | grep …`
+- 빌드·번들·의존성 설치 **없음**(단일 정적 파일). 검사는 `node scripts/check-csp.js` 하나뿐이다.
+- 배포: `main`에 push → **Firebase Hosting**(GitHub Actions, `.github/workflows/firebase-hosting.yml`)과
+  **GitHub Pages**에 모두 반영된다. 이전 기간 동안 두 주소가 같은 내용을 서빙한다.
+- 손으로 배포: `node scripts/check-csp.js && firebase deploy --only hosting --project inky-calculator`
+- 확인: `curl -sI https://inky-calculator.web.app/` 로 보안 헤더가 실렸는지 본다.
 - 커밋 메시지 형식: `type: 한글 설명 (승인 Bumm M/D)` — type은 feat/fix/docs/chore/refactor/test.
