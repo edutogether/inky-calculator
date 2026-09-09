@@ -102,5 +102,7 @@ CSP가 차단한다. 스타일은 `<style>` 블록에 규칙으로 넣고, 핸�
 - 배포: `main`에 push → **Firebase Hosting**(GitHub Actions, `.github/workflows/firebase-hosting.yml`)과
   **GitHub Pages**에 모두 반영된다. 이전 기간 동안 두 주소가 같은 내용을 서빙한다.
 - 손으로 배포: `node scripts/check-csp.js && firebase deploy --only hosting --project inky-calculator`
-- 확인: `curl -sI https://inky-calculator.web.app/` 로 보안 헤더가 실렸는지 본다.
+- 배포 뒤 확인: `node scripts/check-headers.js https://inky-calculator.web.app/`
+  보안 헤더 5종과 `Cache-Control: no-cache` 가 실제 응답에 있는지 본다. 워크플로도 배포 직후 이걸
+  돌리고, 하나라도 빠지면 배포를 실패로 표시한다 — **헤더가 이번 이전의 목적이기 때문이다.**
 - 커밋 메시지 형식: `type: 한글 설명 (승인 Bumm M/D)` — type은 feat/fix/docs/chore/refactor/test.

@@ -27,3 +27,7 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_INKY_CALCULATOR }}
           projectId: inky-calculator
           channelId: live
+
+      # 이번 이전의 목적이 응답 헤더라, 헤더가 빠진 배포는 성공이 아니다.
+      - name: 배포된 응답에 보안 헤더가 실렸는지 확인
+        run: node scripts/check-headers.js https://inky-calculator.web.app/
