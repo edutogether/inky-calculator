@@ -36,6 +36,16 @@ const N = num('n'), C = num('c'), CAP = num('cap'), UNIT = num('unit');
 
 const problems = [];
 
+/* 0) 화면의 입력칸 기본값과 상태(const M)가 같은지.
+      두 곳에 같은 숫자가 박혀 있어서 한쪽만 고치면 **화면과 계산이 어긋난다** —
+      인당 상한을 40,000 → 30,000 으로 내릴 때 실제로 마크업 쪽을 빼먹었다(2026-09-09). */
+[['mN', N, '인원'], ['mC', C, '협의회 횟수'], ['mCap', CAP, '인당 지원금액']].forEach(([id, want, what]) => {
+  const m = html.match(new RegExp('id="' + id + '"[^>]*value="(\\d+)"'));
+  if (!m) { problems.push('입력칸 ' + id + ' 의 기본값(value)을 찾지 못했습니다.'); return; }
+  if (Number(m[1]) !== want)
+    problems.push(what + ' 의 화면 기본값과 상태가 다릅니다 — 입력칸 value="' + m[1] + '" 인데 const M 은 ' + want + ' 입니다.');
+});
+
 // 1) 권장 표시 정합성 + 권장 물품 합계
 let goods = 0;
 D.forEach(it => {

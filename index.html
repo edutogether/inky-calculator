@@ -241,6 +241,9 @@ input[type=radio]{accent-color:var(--acc);width:15px;height:15px;cursor:pointer}
   border-radius:8px;background:var(--sunk);color:var(--acc);font-size:13px;font-weight:600;
   word-break:break-all;text-decoration:none}
 .dlg .dlgLink:hover{border-color:var(--acc);text-decoration:underline}
+/* 근거 링크 — 무슨 기준인지 사람이 직접 확인할 수 있게 문서로 보낸다 */
+.dlg .dlgRef{font-size:12px;font-weight:600;margin-top:9px}
+.dlg .dlgRef::before{content:'근거 ';color:var(--mut);font-weight:500}
 .dlg .row2{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
 .dlg2{max-width:560px;width:100%;position:relative;padding:20px 22px 18px}
 .dlg2 h3{padding-right:28px}
@@ -414,6 +417,7 @@ html:not(.js) .tabbar,html:not(.js) .wrap{display:none !important}
 <div class="mask" id="mask"><div class="dlg" role="alertdialog" aria-modal="true">
   <h3 id="dlgT"></h3><div id="dlgB"></div>
   <a id="dlgL" class="dlgLink" target="_blank" rel="noopener" hidden></a>
+  <a id="dlgRef" class="dlgLink dlgRef" target="_blank" rel="noopener" hidden></a>
   <div class="row2"><button class="pb" id="dlgGo">공통에서 수량 늘리기</button>
     <button class="pb" id="dlgCopy" hidden>주소 복사</button>
     <a class="pb on" id="dlgOpen" target="_blank" rel="noopener" hidden>견적 그대로 열기</a>
@@ -433,7 +437,7 @@ const MEET_MAX_RATIO=0.40;
 function meetRoom(goods){ return Math.min(Math.max(0,BUDGET-goods), Math.floor(BUDGET*MEET_MAX_RATIO)); }
 function perFit(goods,n,c){ const slots=Math.max(0,n)*Math.max(0,c);
   return slots? Math.min(M.cap, Math.floor(meetRoom(goods)/slots/M.unit)*M.unit) : 0; }
-const M={n:15,c:2,cap:40000,unit:1000,auto:true,per:0};   // 협의회 2회 기준
+const M={n:15,c:2,cap:30000,unit:1000,auto:true,per:0};   // 협의회 2회 기준, 인당 상한 30,000원
 D.forEach((it,i)=>{it.on=!it.off; it.sel=Math.max(0,it.o.findIndex(o=>o.d)); it.qty=it.q; it.id=i;});
 // 공통 수량을 참여 부스에 고르게 나눈다. 남는 것은 앞 부스(①)부터 한 개씩 더 준다.
 const pool=it=>it.qty*(it.up||1);
@@ -501,7 +505,7 @@ body.innerHTML=SECS.map(sec=>{
         <div class="mrow">
           <div class="fld"><label for="mN">인원</label><input id="mN" class="n" value="15" inputmode="numeric"></div>
           <div class="fld"><label for="mC">협의회 횟수</label><input id="mC" class="n" value="2" inputmode="numeric"></div>
-          <div class="fld"><label for="mCap">인당 지원금액</label><input id="mCap" class="n" value="40000" inputmode="numeric"></div>
+          <div class="fld"><label for="mCap">인당 지원금액</label><input id="mCap" class="n" value="30000" inputmode="numeric"></div>
           <div class="fld w2"><label>절사 단위</label><span class="seg">
             <button id="u1000" class="on">1,000원</button><button id="u500">500원</button></span></div>
           <div class="fld w2"><label for="mPer">지급액</label><span class="seg plain">
@@ -704,7 +708,7 @@ oMask.onclick=e=>{if(e.target===oMask)closeOpts();};
 
 const mask=document.getElementById('mask');
 let dlgTarget=null;
-function dialog(t,b,id,url){
+function dialog(t,b,id,url,basis){
   document.getElementById('dlgT').textContent=t;
   const B=document.getElementById('dlgB'); B.textContent='';
   String(b).split('\n\n').forEach(para=>{                 // 빈 줄 기준으로 문단을 나눈다
@@ -721,6 +725,9 @@ function dialog(t,b,id,url){
     C.hidden=false; C.textContent='주소 복사'; C.dataset.url=full;
     X.classList.remove('on');                              // 강조는 "견적 그대로 열기" 쪽에
   } else { L.hidden=true; C.hidden=true; O.hidden=true; X.classList.add('on'); }
+  const RF=document.getElementById('dlgRef');       // 근거 문서로 보내는 링크
+  if(basis){ RF.href=basis.url; RF.textContent=basis.ref; RF.hidden=false; }
+  else RF.hidden=true;
   dlgTarget=id; document.getElementById('dlgGo').hidden=(id==null);
   mask.classList.add('on'); document.getElementById('dlgX').focus();
 }
@@ -992,10 +999,19 @@ function rowsOut(){
 })();
 const $=id=>document.getElementById(id);
 /* 인당 지원금액
-   · 상한 40,000원 — 이것만 실제 제한이다. 넘겨 적으면 40,000원으로 맞춘다.
+   · 상한 30,000원 — 이것만 실제 제한이다. 넘겨 적으면 30,000원으로 맞춘다.
+     **대상이 공직자(교사)라서 30,000원이다.** 공직자가 아닌 사람은 40,000원이므로,
+     대상이 바뀌면 이 값도 바뀐다(2026-09-09 대표 확인).
    · 하한은 없다. 1만원 아래를 규칙으로 막지 않는다(현실적으로 잘 쓰지 않을 뿐이다).
    · 500원 단위로 정리한다(계산을 깔끔하게 하려는 것이고 규칙이 아니다). */
-const PER_MAX=40000, PER_STEP=500;
+const PER_MAX=30000, PER_STEP=500;
+/* 인당 상한의 근거. 문구와 링크를 한 곳에 모아 둔다 — 연도나 근거가 바뀌면 여기만 고친다. */
+const PER_BASIS={
+  why:'공직자 대상 간담회 등 접대성 업무추진비는 1인 1회당 30,000원 이하예요'
+     +'(공직자가 아닌 사람은 40,000원). 협의회 참석자는 공직자라서 30,000원이 기준이에요.',
+  ref:'인천광역시교육청 학교회계 예산편성 기본지침 (2024학년도 기준)',
+  url:'https://www.ice.go.kr/upload/people/na/bbs_1656/2024/08/e94ca412f8015c333c8621e7e5e2344c.pdf'
+};
 function fixPer(v){
   return Math.min(PER_MAX, Math.max(0, Math.round(v/PER_STEP)*PER_STEP));
 }
@@ -1013,45 +1029,53 @@ function fixPer(v){
   e.target.value=F(ok);
   if(ok!==raw){
     if(raw>PER_MAX)
-      dialog('인당 지원금액은 40,000원까지예요',
-        `4만원 이하로 다시 조정해 주세요. ${F(raw)}원을 적으셔서 ${F(ok)}원으로 맞춰 뒀어요.`, null);
+      dialog('인당 지원금액은 30,000원까지예요',
+        `3만원 이하로 다시 조정해 주세요. ${F(raw)}원을 적으셔서 ${F(ok)}원으로 맞춰 뒀어요.\n\n`
+        +PER_BASIS.why, null, null, PER_BASIS);
     else
       dialog('500원 단위로 맞췄어요',
         `${F(raw)}원을 ${F(ok)}원으로 정리했어요. 계산을 깔끔하게 하려는 것이고, 다시 고치실 수 있어요.`, null);
   }
   render();
 }));
-/* 자동 계산 : 남는 예산에 맞춰 지급액을 정하고, 그것만으로 안 되면 횟수·인원까지 움직인다.
-   순서는 **지원금액 → 횟수 → 인원** 이다(2026-09-09 대표 확정).
-   · 남는 돈이 적어 인당이 목표선(10,000~15,000원) 아래로 내려가면 → 횟수를 1회까지 줄이고,
-     그래도 모자라면 인원을 줄여 인당이 그 선에 오게 한다.
-   · 인당이 상한(40,000원)에 걸리고도 돈이 남으면 → 권장 범위 안에서 인원과 횟수를 함께 늘린다.
-   · 절사 단위는 건드리지 않는다(1,000원 고정 — 자동 계산이 손대도 되는지 대표님 확정 전).
+/* 자동 계산 : 쓸 수 있는 돈을 **사람이 보기에 자연스러운 조합**으로 나눈다.
+   대표님이 준 현실 분포(2026-09-09)를 탐색 순서로 쓴다 —
+   협의회는 1회가 70%, 1~2회가 90%이고, 인원은 10~20명이 90%다.
+   그래서 억지로 구석을 찾지 않고 **흔한 쪽을 먼저** 본다:
+     · 지금 사람이 맞춰 둔 조합을 가장 먼저 본다(그대로 되면 건드리지 않는다)
+     · 그다음 횟수 1회 → 2회 → 3회, 각 횟수에서 인원 20~10명 → 9~1명
+   조건은 **인당이 목표선(10,000원) 이상**이고, 그중 **쓸 돈을 가장 알뜰히 쓰는**(남는 돈이 가장
+   적은) 조합을 고른다. 같으면 먼저 본 것(= 더 흔한 것)이 이긴다.
+   · 인당 상한은 30,000원, 절사 단위는 1,000원 고정(자동 계산이 손대도 되는지 대표님 확정 전).
+   · 목표선을 맞출 조합이 아예 없으면 멈추고 알린다.
    사람이 「자동 계산」을 눌렀을 때만 돌고, 인원·횟수를 바꿨으면 무엇을 바꿨는지 알려 준다. */
 const PER_GOAL_LOW=10000;                 // 인당 목표선(규칙이 아니라 목표다 — 1만~1.5만원 선)
-const C_MIN=1, C_MAX=3, N_MAX=20;         // 권장 범위(횟수 1~3, 인원 최대 20)
+const C_ORDER=[1,2,3];                    // 1회가 70%, 1~2회가 90%
+const N_COMMON=20, N_COMMON_LOW=10;       // 인원은 10~20명이 90%
 function autoFit(){
   const goods=D.reduce((t,it)=>t+(it.on?it.o[it.sel].p*it.qty:0),0);
   /* 쓸 수 있는 돈은 '남는 예산'과 '협의회비 상한' 중 **작은 쪽**이다.
      이걸 빼먹으면 자동 계산이 상한을 넘는 값을 만들어 놓고, 곧바로 자기 앱이
      '상한을 넘었다'고 경고하는 상태가 된다(실제로 그렇게 짰다가 검증에서 잡혔다). */
   const room=meetRoom(goods);
-  const perOf=(n,c)=>perFit(goods,n,c);
-  let n=Math.max(1,M.n), c=Math.max(1,M.c);
-  const from={n,c};
-  // 1) 지금 인원·횟수로 인당이 목표선 아래면 횟수를 1회까지 줄인다
-  while(perOf(n,c)<PER_GOAL_LOW && c>C_MIN) c--;
-  // 2) 그래도 모자라면 인원을 줄여 목표선에 올린다
-  while(perOf(n,c)<PER_GOAL_LOW && n>1) n--;
-  // 3) 상한에 걸리고도 돈이 남으면 권장 범위 안에서 인원·횟수를 함께 늘린다
-  while(perOf(n,c)>=PER_MAX && room-perOf(n,c)*n*c>0 && (c<C_MAX||n<N_MAX)){
-    if(c<C_MAX) c++; else if(n<N_MAX) n++; else break;
+  const from={n:Math.max(1,M.n), c:Math.max(1,M.c)};
+  const nOrder=[];
+  for(let x=N_COMMON;x>=N_COMMON_LOW;x--) nOrder.push(x);   // 흔한 구간을 먼저, 큰 쪽부터
+  for(let x=N_COMMON_LOW-1;x>=1;x--) nOrder.push(x);        // 그래도 안 되면 작은 인원
+  const cands=[from];
+  for(const c of C_ORDER) for(const n of nOrder) cands.push({n,c});
+  let best=null;
+  for(const cd of cands){
+    const per=perFit(goods,cd.n,cd.c);
+    if(per<PER_GOAL_LOW) continue;
+    const left=room-per*cd.n*cd.c;
+    if(!best||left<best.left) best={n:cd.n,c:cd.c,per,left};   // 같으면 먼저 본 것(더 흔한 것)이 이긴다
   }
-  const per=perOf(n,c);
-  if(per<=0) return {ok:false};
-  M.n=n; M.c=c; M.per=per; M.auto=false;
-  $('mN').value=n; $('mC').value=c;
-  return {ok:true, per, changed:(n!==from.n||c!==from.c), from, to:{n,c}};
+  if(!best) return {ok:false};
+  M.n=best.n; M.c=best.c; M.per=best.per; M.auto=false;
+  $('mN').value=best.n; $('mC').value=best.c;
+  return {ok:true, per:best.per, left:best.left,
+          changed:(best.n!==from.n||best.c!==from.c), from, to:{n:best.n,c:best.c}};
 }
 function segOn(a,b){$(a).classList.add('on');$(b).classList.remove('on');}
 $('u1000').onclick=()=>{M.unit=1000;segOn('u1000','u500');render();};
@@ -1066,9 +1090,10 @@ $('mAuto').onclick=()=>{
   const r=autoFit();
   setMan(false); render();
   if(!r.ok){
-    dialog('이 예산으로는 맞출 수 없어요',
-      '물품 구매액이 배정 예산을 이미 채워서 협의회비로 나눌 돈이 남지 않아요.\n\n'
-      +'물품을 덜어 남는 예산을 만든 뒤 다시 눌러 주세요.', null);
+    dialog('이 예산으로는 협의회비를 맞추기 어려워요',
+      '남는 예산으로는 인당 10,000원도 만들기 어려워요.\n\n'
+      +'물품을 덜어 남는 예산을 늘린 뒤 다시 눌러 주세요. '
+      +'인당 금액을 직접 적어 넣으셔도 됩니다.', null);
     return;
   }
   if(r.changed){
