@@ -9,7 +9,8 @@
 - **저장소**: `github.com/edutogether/inky-calculator` (2026-09-08 생성, public)
 - **폴더**: `D:\Projects\inky-festival\inky-calculator`
   (처음엔 `edutogether/` 아래 만들었다가 형제 앱과 맞추려고 옮김. GitHub 저장소 이름은 `edutogether/inky-calculator` 그대로다)
-- **라이브**: https://edutogether.github.io/inky-calculator/ (GitHub Pages, `main` 브랜치 루트)
+- **라이브**: https://calc.edutogether.kr (Firebase Hosting, 프로젝트·사이트 모두 `inky-calculator`.
+  `https://inky-calculator.web.app` 으로도 같은 것이 열린다)
 - **클로드 아티팩트**: https://claude.ai/code/artifact/97501810-a6b8-4174-a488-a58cb62cb0f8
 - **구성**: `index.html` **한 파일이 전부다.** 빌드·번들·의존성 설치 없음. 커밋하면 GitHub Pages가 그대로 서빙한다.
 - **⚠️ 수명**: **2026-11-15까지만 필요하다**(대표 결정). 그날 예약 작업이 자동으로 Pages를 내리고
@@ -62,8 +63,9 @@
 ## 명령
 
 - 테스트·린트·빌드 **없음**(단일 정적 파일).
-- 배포: `main`에 push하면 GitHub Pages가 자동 반영(1~3분).
-- 확인: `curl -s "https://edutogether.github.io/inky-calculator/?v=$(date +%s)" | grep …`
+- 배포: `main`에 push하면 Firebase Hosting에 자동 반영(GitHub Actions).
+  손으로 하려면 `node scripts/check-csp.js && firebase deploy --only hosting --project inky-calculator`.
+- 확인: `node scripts/check-headers.js https://calc.edutogether.kr/`
 
 ## 대표와의 소통 경로
 
