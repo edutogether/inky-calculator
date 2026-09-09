@@ -21,6 +21,10 @@ jobs:
       - name: CSP 해시가 index.html 과 맞는지 검사
         run: node scripts/check-csp.js
 
+      # 첫 화면(권장안)이 협의회비 상한 비율을 지키는지 — 어기면 배포하지 않는다.
+      - name: 권장안이 협의회비 상한을 지키는지 검사
+        run: node scripts/check-recommended.js
+
       - name: Firebase Hosting 에 배포
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
