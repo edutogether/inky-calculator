@@ -37,4 +37,12 @@ function renderWithMeetOnly(win, { n, c, per }) {
   ev(win, `D.forEach(it=>it.on=false); M.auto=false; M.n=${n}; M.c=${c}; M.per=${per}; render();`);
 }
 
-module.exports = { loadApp, ev, renderWithMeetOnly };
+/** stateStr() 과 같은 방식(JSON → UTF-8 바이트 → base64 → URL-safe)으로 값을 인코딩한다.
+ *  applyState() 가 조작된 값을 걸러내는지 보려고, stateStr() 이라면 절대 만들지 않을
+ *  값(문자열 수량·음수·소수·범위 밖 인덱스)을 직접 실어 보낼 때 쓴다. */
+function encodeState(obj) {
+  return Buffer.from(JSON.stringify(obj), 'utf8').toString('base64')
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+module.exports = { loadApp, ev, renderWithMeetOnly, encodeState };

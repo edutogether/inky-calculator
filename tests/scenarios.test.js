@@ -13,7 +13,7 @@
  * (`expect(...).not.toHaveLength(0)` 또는 개수 자체를 단언). 대상을 못 찾으면 실패해야 한다.
  */
 import { describe, it, expect } from 'vitest';
-import { loadApp, ev, renderWithMeetOnly } from './helpers.js';
+import { loadApp, ev, renderWithMeetOnly, encodeState } from './helpers.js';
 
 describe('시나리오 1 — 남는 예산: 부호(+)와 색(ok)', () => {
   it('기본 화면(권장 구성)은 예산이 남고, 화면에 +부호·ok색으로 뜬다', () => {
@@ -152,5 +152,50 @@ describe('시나리오 7 — 자동 계산이 어긋난 값을 바로잡고, 그
     // 화면 숫자(#tot)까지 원본과 같아야 "그대로 열기"라고 부를 수 있다.
     expect(win2.document.getElementById('tot').textContent)
       .toBe(win.document.getElementById('tot').textContent);
+  });
+});
+
+describe('시나리오 8 — 조작된 #q= 주소가 화면 계산을 깨지 않는다', () => {
+  /* app.md "알려진 것 — 아직 고치지 않았다" 2번 항목(2026-09-09) — 2026-09-10에 처리.
+   * stateStr() 이라면 절대 만들지 않을 값(문자열·음수·소수·범위 밖 인덱스·엉뚱한 절사 단위)을
+   * 직접 실어 보내, applyState() 가 사람이 칸에 직접 칠 때와 같은 규칙(1073·1079행)으로
+   * 걸러내는지 본다 — 걸러내지 못하면 화면이 "NaN원"으로 깨진다(서버가 없어 보안 문제는
+   * 아니지만, 공유받은 링크를 손으로 고쳐 붙여넣기만 해도 화면 계산이 깨질 수 있었다). */
+  it('문자열·음수·소수 수량과 범위 밖 선택은 0/최솟값으로, 절사 단위는 500·1000만 허용한다', () => {
+    const q = encodeState({
+      v: 1,
+      a: [
+        ['abc', 'xx', 1],   // 문자열 sel·qty
+        [-5, -100, 0],      // 음수 sel·qty
+        [2, 3.7, 1],        // 소수 qty
+      ],
+      m: ['nope', null, 999999, 12345, 1, 'notanumber'],
+    });
+    const win = loadApp('q=' + q);
+
+    expect(ev(win, 'D[0].sel')).toBe(0);
+    expect(ev(win, 'D[0].qty')).toBe(0);
+    expect(ev(win, 'D[0].on')).toBe(true);
+
+    expect(ev(win, 'D[1].sel')).toBe(0);
+    expect(ev(win, 'D[1].qty')).toBe(0);
+    expect(ev(win, 'D[1].on')).toBe(false);
+
+    expect(ev(win, 'D[2].sel')).toBeGreaterThanOrEqual(0);
+    expect(ev(win, 'D[2].sel')).toBeLessThanOrEqual(ev(win, 'D[2].o.length-1'));
+    expect(ev(win, 'D[2].qty')).toBe(3); // 3.7 → parseInt로 3
+
+    expect(ev(win, 'M.n')).toBe(0);           // "nope" → 0
+    expect(ev(win, 'M.c')).toBe(0);           // null → 0
+    expect(ev(win, 'M.cap')).toBe(40000);     // 999999 → 상한 40,000원으로
+    expect(ev(win, 'M.unit')).toBe(1000);     // 12345 → 유효하지 않으니 기본값 1,000원
+    expect(ev(win, 'M.auto')).toBe(true);
+    expect(ev(win, 'M.per')).toBe(0);         // "notanumber" → 0
+
+    // 화면이 실제로 깨지지 않았는지 — 숫자가 NaN 없이 정상적으로 찍혀야 한다.
+    const tot = win.document.getElementById('tot').textContent;
+    expect(tot).not.toContain('NaN');
+    expect(tot).toMatch(/^[0-9,]+원$/);
+    expect(win.document.getElementById('sum').innerHTML).not.toContain('NaN');
   });
 });

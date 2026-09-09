@@ -851,15 +851,24 @@ function stateStr(){
   return btoa(String.fromCharCode(...new TextEncoder().encode(j)))
     .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 }
+/* #q= 는 남이 만든 주소일 수 있다(공유받은 링크를 손으로 고쳐 붙여넣는 것도 포함) — 그 안의
+   숫자를 그대로 믿지 않는다. 문자열·음수·소수·범위 밖 값이 들어와도 화면 계산이 깨지지 않도록,
+   입력칸에 사람이 직접 칠 때와 같은 규칙으로 정리한다: 수량·인원·횟수는 "0 이상 정수"
+   (1073행의 입력 규칙과 동일), 인당 금액류는 그 규칙에 더해 fixPer()로 상한·절사 단위까지
+   맞춘다(1079행의 blur 규칙과 동일). 절사 단위는 500·1,000 두 값만 허용한다.
+   (2026-09-09 app.md에 "다음 정비 때 처리" 로 남겨 둔 항목 — 2026-09-10에 처리) */
+const int0=x=>Math.max(0,parseInt(x,10)||0);
 function applyState(str){
   try{
     const b=atob(str.replace(/-/g,'+').replace(/_/g,'/'));
     const u=Uint8Array.from(b,c=>c.charCodeAt(0));
     const o=JSON.parse(new TextDecoder().decode(u));
     if(!o||!o.a)return false;
-    o.a.forEach((v,i)=>{if(!D[i])return; D[i].sel=Math.min(v[0],D[i].o.length-1); D[i].qty=v[1]; D[i].on=!!v[2];});
-    if(o.m){M.n=o.m[0];M.c=o.m[1];M.cap=o.m[2];M.unit=o.m[3];M.auto=!!o.m[4];M.per=o.m[5];
-      ['mN','mC','mCap'].forEach((id,k)=>{document.getElementById(id).value=o.m[k];});}
+    o.a.forEach((v,i)=>{if(!D[i])return;
+      D[i].sel=Math.min(int0(v[0]),D[i].o.length-1); D[i].qty=int0(v[1]); D[i].on=!!v[2];});
+    if(o.m){M.n=int0(o.m[0]);M.c=int0(o.m[1]);M.cap=fixPer(int0(o.m[2]));
+      M.unit=o.m[3]===500?500:1000;M.auto=!!o.m[4];M.per=fixPer(int0(o.m[5]));
+      $('mN').value=M.n;$('mC').value=M.c;$('mCap').value=M.cap;}
     return true;
   }catch(_){return false;}
 }
