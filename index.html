@@ -4,13 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark">
+<link rel="icon" id="favi" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Ctext%20y='.9em'%20font-size='58'%3E%F0%9F%A7%BE%3C/text%3E%3C/svg%3E">
 <style>:root{color-scheme:light dark}
 body{margin:0;padding:0}
 img{max-width:100%}
 [hidden]{display:none !important}</style>
 </head>
 <body>
-<title>InKY Cinema Festival 견적 같이뽑아요 💛</title>
+<title>InKY Calculator</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap">
 <style>
@@ -1181,6 +1182,16 @@ document.getElementById('prt').onclick=()=>{
 /* 첫 진입 : 권장 물품 구성 그대로에서 자동 계산을 한 번만 돌려 지급액을 정하고, 그 값을 고정한다.
    그 뒤로는 물품을 바꿔도 협의회비가 뒤에서 따라오지 않는다 — 사람이 바꾼 것만 화면에 남는다.
    주소로 들어온 견적(#q=)은 보낸 사람의 설정을 그대로 살린다(자동/직접 여부까지). */
+/* 탭이 뒤로 물러나 있으면 파비콘을 흑백으로 바꾼다(돌아오면 원래 색).
+   외부 파일 없이 SVG data URI 두 개를 바꿔 끼우는 방식이라, 내려받은 HTML 파일
+   하나만 열어도 그대로 동작한다. */
+const FAVI_ON="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Ctext%20y='.9em'%20font-size='58'%3E%F0%9F%A7%BE%3C/text%3E%3C/svg%3E";
+const FAVI_OFF="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Cfilter%20id='g'%3E%3CfeColorMatrix%20type='saturate'%20values='0'/%3E%3C/filter%3E%3Ctext%20y='.9em'%20font-size='58'%20filter='url(%23g)'%3E%F0%9F%A7%BE%3C/text%3E%3C/svg%3E";
+document.addEventListener('visibilitychange',()=>{
+  const l=document.getElementById('favi');
+  if(l) l.href = document.hidden ? FAVI_OFF : FAVI_ON;
+});
+
 const restored = location.hash.startsWith('#q=') ? applyState(location.hash.slice(3)) : false;
 syncChecks();
 render();
