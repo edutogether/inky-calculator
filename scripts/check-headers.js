@@ -22,8 +22,30 @@ const REQUIRED = [
   ['cache-control', v => (/no-cache|no-store/.test(v) ? null : `재방문자가 옛 화면을 받습니다 (지금: ${v})`)],
 ];
 
+/* 배포 직후에는 DNS·Hosting 반영이 잠깐 늦을 수 있다. 그 일시적 실패와 "헤더가 없다"는
+   진짜 실패를 구분해야 하므로, 몇 번 다시 시도해 보고 그래도 안 되면 그 사실을 밝히고 멈춘다. */
+async function fetchWithRetry(target, attempts = 3) {
+  let last;
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      return await fetch(target, { redirect: 'follow' });
+    } catch (err) {
+      last = err.cause?.code || err.message;
+      if (i < attempts) {
+        console.error(`  (${i}번째 연결 실패: ${last} — 3초 뒤 다시 시도)`);
+        await new Promise(r => setTimeout(r, 3000));
+      }
+    }
+  }
+  console.error(`연결 실패 — ${target}\n\n  ${attempts}번 시도했지만 응답을 받지 못했습니다: ${last}`);
+  console.error('  헤더가 빠진 것이 아니라 주소에 닿지 못한 것입니다. DNS·배포 반영을 확인하세요.');
+  process.exitCode = 1;
+  return null;
+}
+
 (async () => {
-  const res = await fetch(url, { redirect: 'follow' });
+  const res = await fetchWithRetry(url);
+  if (!res) return;
   const problems = [];
 
   if (!res.ok) problems.push(`HTTP ${res.status}`);
