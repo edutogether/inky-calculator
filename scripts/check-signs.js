@@ -49,6 +49,36 @@ const over = html.match(/예산 초과<\/span><span class="v ([a-z]+)"/);
 if (!over) problems.push("'예산 초과' 줄을 찾지 못했습니다.");
 else if (over[1] !== 'no') problems.push("'예산 초과'에 경고색이 없습니다 (class=\"v " + over[1] + '").');
 
+/* 화면에 같은 집행률이 보이면 색도 같아야 한다.
+   화면은 소수 1자리로 반올림해 보여 주는데 판정을 원값으로 하면, 99.974% 와 100% 가
+   **둘 다 화면에 "100.0%" 로 찍히면서 색은 초록/빨강으로 갈린다**(실제로 그랬다).
+   그리고 정확히 100% 는 초록이어야 한다 — 예산을 다 쓴 것은 최선이지 경고가 아니다. */
+const rm = html.match(/function rateClass\(pct\)\{[\s\S]*?\n\}/);
+if (!rm) {
+  problems.push('index.html 에서 rateClass() 를 찾지 못했습니다 — 집행률 색 판정이 바뀌었습니다.');
+} else {
+  const rateClass = new Function('return ' + rm[0])();
+  console.log('\n집행률 색 — 화면 표시값과 색이 어긋나지 않는지');
+  if (rateClass(100) !== ' r-good')
+    problems.push('정확히 100% 가 초록이 아닙니다 (' + rateClass(100).trim() + '). 예산을 다 쓴 것은 최선입니다.');
+  if (rateClass(100.1) !== ' r-over')
+    problems.push('100.1% 가 빨강이 아닙니다 (' + rateClass(100.1).trim() + ').');
+
+  /* 0~130% 를 잘게 훑어 **화면에 같은 값으로 찍히는 것끼리** 색이 갈리는지 본다. */
+  const seen = new Map(); let clash = 0;
+  for (let v = 0; v <= 130.0001; v += 0.01) {
+    const shown = v.toFixed(1), cls = rateClass(v);
+    if (!seen.has(shown)) seen.set(shown, cls);
+    else if (seen.get(shown) !== cls) {
+      if (clash++ === 0) problems.push('화면에 "' + shown + '%" 로 같이 보이는데 색이 갈립니다 — '
+        + seen.get(shown).trim() + ' vs ' + cls.trim() + '. 판정을 표시값(소수 1자리) 기준으로 하세요.');
+    }
+  }
+  console.log('  표시값 ' + seen.size + '가지를 훑어 색이 갈리는 곳: ' + clash + '건');
+  console.log('  100.0% → ' + rateClass(100).trim() + '   99.974% → ' + rateClass(99.974).trim()
+    + '   100.1% → ' + rateClass(100.1).trim());
+}
+
 /* 집행률 색과 게이지 막대 색이 같은 구간·같은 색을 쓰는지.
    전에는 막대만 `pct>92` 라는 다른 규칙을 써서, 98.9%에서 숫자는 초록인데 막대는 주황이었다 —
    같은 화면이 같은 사실을 두고 다른 말을 하고 있었다. 규칙이 두 곳에 적히면 또 어긋난다. */
