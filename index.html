@@ -231,7 +231,7 @@ input[type=radio]{accent-color:var(--acc);width:15px;height:15px;cursor:pointer}
   letter-spacing:-.015em;font-variant-numeric:tabular-nums}
 .mout .last{border-top:1px dashed var(--line2);padding-top:8px;margin-top:1px}
 .mout .last .big{font-size:19.5px}
-.cap{color:var(--dim);font-size:12px;line-height:1.6}
+.cap{color:var(--mut);font-size:12px;line-height:1.6}
 /* 권장 범위를 벗어났을 때의 안내 — 막는 것이 아니라 알려 주기만 한다. */
 .tip-range{margin:0;padding:9px 11px;border-radius:8px;background:var(--acc-w);color:var(--acc);
   font-size:12.5px;line-height:1.6}
@@ -646,6 +646,13 @@ function render(){
   const mp=document.getElementById('mPer');
   mp.placeholder=F(auto0)+'원';                 // 비워 두면 자동 계산 금액이 안내로 보인다
   if(document.activeElement!==mp)mp.value=M.per?F(M.per):'';
+  /* 인당 지원금액(#mCap)도 지급액(#mPer)과 같은 자릿점 표기를 쓴다. blur 때만 콤마가 붙던
+     전이라 첫 화면에서는 "40000"(콤마 없음), 지급액은 "20,000"(콤마 있음)으로 서로 다르게
+     보였다 — render() 가 mPer 는 매번 다시 그리면서 mCap 은 손대지 않았기 때문이다.
+     여기서도 같은 규칙으로 매번 다시 그린다(마크업의 value="40000" 은 그대로 둔다 —
+     scripts/check-recommended.js 가 콤마 없는 숫자 그대로를 기대한다). */
+  const mc=document.getElementById('mCap');
+  if(document.activeElement!==mc)mc.value=F(M.cap);
   const raw=slots?Math.floor(avail/slots):0, capped=raw>M.cap;
   const tips=[];
   if(M.c<1||M.c>3) tips.push(`협의회 횟수는 보통 1~2회, 많아도 3회예요(지금 ${M.c}회).`);

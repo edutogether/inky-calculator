@@ -199,3 +199,23 @@ describe('시나리오 8 — 조작된 #q= 주소가 화면 계산을 깨지 않
     expect(win.document.getElementById('sum').innerHTML).not.toContain('NaN');
   });
 });
+
+describe('시나리오 9 — 인당 지원금액(#mCap)과 지급액(#mPer)의 자릿점 표기가 같다', () => {
+  /* app.md "알려진 것" 항목 — 2026-09-10에 처리. #mPer 는 render() 가 매번 F() 로
+   * 다시 그려 콤마가 붙었는데, #mCap 은 마크업 기본값("40000")을 그대로 두고 있어서
+   * 사람이 그 칸을 한 번도 blur 하지 않은 첫 화면에서는 "40000"·"20,000"으로 자릿점
+   * 표기가 서로 달랐다. */
+  it('첫 화면부터 #mCap·#mPer 모두 콤마 자릿점으로 보인다', () => {
+    const win = loadApp();
+    expect(win.document.getElementById('mCap').value).toBe('40,000');
+    expect(win.document.getElementById('mPer').value).toMatch(/^[0-9]{1,3}(,[0-9]{3})*$/);
+  });
+
+  it('그 칸에 지금 포커스가 있으면(입력 중) 값을 되읽어 덮어쓰지 않는다', () => {
+    const win = loadApp();
+    ev(win, "document.getElementById('mCap').focus()");
+    ev(win, "render()");
+    // 포커스 중엔 render() 가 손대지 않아야 사람이 치는 중간에 값이 안 튄다.
+    expect(win.document.activeElement).toBe(win.document.getElementById('mCap'));
+  });
+});
