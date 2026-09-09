@@ -65,6 +65,8 @@ a.pb.on:hover{color:#fff;text-decoration:none}
 @media(max-width:1120px){.tab{padding:8px 6px;font-size:12.5px}}
 @media(max-width:900px){.tabwrap{grid-template-columns:1fr}
   .tabs{display:inline-flex;min-width:100%}.tab{flex:none;padding:8px 16px;font-size:13px}}
+.tab .tno{margin-right:4px;opacity:.7;font-weight:600}   /* 구분 번호 ⓪~⑤ */
+.tab.on .tno{opacity:1}
 .tab:hover{color:var(--ink)}
 .tab.on{background:var(--card);color:var(--acc);font-weight:700;
   box-shadow:0 1px 2px rgba(21,25,30,.07),0 2px 8px rgba(21,25,30,.05)}
@@ -474,6 +476,12 @@ groups.forEach(g=>{const k=g.slice(0,1);
   TAB[g]=g==='공통'?'공통':(NICK[k]||g.slice(2));});
 TAB['협의회비']='협의회';
 const SECS=[...groups,'협의회비'];
+/* 구분 번호 ⓪①②③④⑤ — 화면 순서 그대로 붙인다. 탭·합계 목록·구분 머리글·엑셀이
+   모두 이 하나를 쓴다(따로 적으면 한쪽만 바뀐다).
+   부스 이름에는 번호가 이미 들어 있으므로 withNo() 는 없는 것에만 붙인다. */
+const CIRC=['⓪','①','②','③','④','⑤','⑥','⑦','⑧','⑨'];
+const NO={}; SECS.forEach((sec,i)=>{NO[sec]=CIRC[i]||'';});
+const withNo=sec=>CIRC.includes(sec.slice(0,1))?sec:(NO[sec]?NO[sec]+' '+sec:sec);
 const body=document.getElementById('body');
 
 /* ── 한 품목 줄(고를 수 있는 줄) */
@@ -515,7 +523,7 @@ function fixHTML(it,bi,share,unit){return `
 
 body.innerHTML=SECS.map(sec=>{
   if(sec==='협의회비')return `<div class="sec" data-sec="협의회비">
-    <div class="grp"><div class="gh"><b>협의회비</b><span>물품 구매 후에 남는 예산은 협의회비로 활용할 수 있어요</span>
+    <div class="grp"><div class="gh"><b>${withNo('협의회비')}</b><span>물품 구매 후에 남는 예산은 협의회비로 활용할 수 있어요</span>
       <span class="gs n" id="mSum"></span></div>
       <div class="meet">
         <div class="mrow">
@@ -546,7 +554,7 @@ body.innerHTML=SECS.map(sec=>{
   return `<div class="sec" data-sec="${sec}">
     <div class="grp"><div class="gh">
       <input type="checkbox" data-grp="${sec}" checked aria-label="${sec} 전체 선택">
-      <b>${sec}</b><span>${own.length}개 품목 · ${bi<0?'4개 부스가 함께 사용하는 항목이에요':'이 부스에서만 사용하는 항목이에요'}</span>
+      <b>${withNo(sec)}</b><span>${own.length}개 품목 · ${bi<0?'4개 부스가 함께 사용하는 항목이에요':'이 부스에서만 사용하는 항목이에요'}</span>
       <span class="gs n" data-g="${sec}"></span></div>
       <div class="list">${own.map(rowHTML).join('')}</div></div>
     ${inh.length?`<div class="grp">
@@ -560,7 +568,7 @@ body.innerHTML=SECS.map(sec=>{
 
 /* ── 탭 */
 const tabs=document.getElementById('tabs');
-tabs.innerHTML=SECS.map(s=>`<button class="tab" data-t="${s}">${TAB[s]}</button>`).join('');
+tabs.innerHTML=SECS.map(s=>`<button class="tab" data-t="${s}"><span class="tno">${NO[s]}</span>${TAB[s]}</button>`).join('');
 let CUR=SECS[0];
 function show(sec){
   CUR=sec;
@@ -652,8 +660,7 @@ function render(){
     +(d>=0?`<div><span>남는 예산</span><span class="v ok">${signed(d)}</span></div>`
           :`<div><span>예산 초과</span><span class="v no">${signed(d)}</span></div>`)
     +`<div><span>집행률</span><span class="v rate${rateClass(tot/BUDGET*100)}">${(tot/BUDGET*100).toFixed(1)}%</span></div>`;
-  const bn=k=>{const c=k.slice(0,1);
-    return NICK[c]?`<span class="bn">${c}</span>${TAB[k]}`:`<span class="bn"></span>${TAB[k]||k}`;};
+  const bn=k=>`<span class="bn">${NO[k]||''}</span>${TAB[k]||k}`;
   document.getElementById('brk').innerHTML=groups.map(k=>
     `<div data-go="${k}"><span>${bn(k)}</span><span class="n">${F(gs[k]||0)}원</span></div>`).join('')
     +`<div data-go="협의회비"><span>${bn('협의회비')}</span><span class="n">${F(meet)}원</span></div>`;
@@ -975,10 +982,10 @@ function rowsOut(){
   const R=[]; let t=0;
   D.filter(d=>d.on&&d.qty>0).forEach(d=>{const o=d.o[d.sel]; t+=o.p*d.qty;
     const sh=d.use?' (부스 배분 '+d.use.map(i=>booths[i].slice(0,1)+(d.sh[i]||0)+(d.du||'개')).join(' ')+')':'';
-    R.push([d.g,d.n,o.t,o.s+sh,d.qty,o.p,o.p*d.qty,o.u||'']);});
+    R.push([withNo(d.g),d.n,o.t,o.s+sh,d.qty,o.p,o.p*d.qty,o.u||'']);});
   const slots=Math.max(0,M.n)*Math.max(0,M.c);
   if(M.per*slots>0)
-    R.push(['협의회비','협의회 참석 지원',`인당 ${F(M.per)}원`,`${M.n}명 × ${M.c}회`,slots,M.per,M.per*slots,'']);
+    R.push([withNo('협의회비'),'협의회 참석 지원',`인당 ${F(M.per)}원`,`${M.n}명 × ${M.c}회`,slots,M.per,M.per*slots,'']);
   return {R, tot:t+M.per*slots};
 }
 (async()=>{
