@@ -242,9 +242,16 @@ input[type=radio]{accent-color:var(--acc);width:15px;height:15px;cursor:pointer}
   border-radius:8px;background:var(--sunk);color:var(--acc);font-size:13px;font-weight:600;
   word-break:break-all;text-decoration:none}
 .dlg .dlgLink:hover{border-color:var(--acc);text-decoration:underline}
-/* 근거 링크 — 무슨 기준인지 사람이 직접 확인할 수 있게 문서로 보낸다 */
-.dlg .dlgRef{font-size:12px;font-weight:600;margin-top:9px}
-.dlg .dlgRef::before{content:'근거 ';color:var(--mut);font-weight:500}
+/* 근거 링크 — 무슨 기준인지 사람이 직접 확인할 수 있게 문서로 보낸다.
+   문서가 둘로 갈라져 있어서(편성지침 → 집행지침) 각각 무엇인지 한 줄로 알려 준다. */
+.dlg .dlgRefs{margin-top:11px;display:flex;flex-direction:column;gap:6px}
+.dlg .dlgRefs .rlab{color:var(--mut);font-size:11.5px;font-weight:600;letter-spacing:.03em}
+.dlg .dlgRefs a{display:block;padding:9px 11px;border:1px solid var(--line);border-radius:8px;
+  background:var(--sunk);color:var(--acc);font-size:12px;font-weight:600;
+  text-decoration:none;line-height:1.5;word-break:keep-all}
+.dlg .dlgRefs a:hover{border-color:var(--acc);text-decoration:underline}
+.dlg .dlgRefs a small{display:block;color:var(--mut);font-weight:500;font-size:11.5px;
+  margin-top:3px;text-decoration:none}
 .dlg .row2{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
 .dlg2{max-width:560px;width:100%;position:relative;padding:20px 22px 18px}
 .dlg2 h3{padding-right:28px}
@@ -418,7 +425,7 @@ html:not(.js) .tabbar,html:not(.js) .wrap{display:none !important}
 <div class="mask" id="mask"><div class="dlg" role="alertdialog" aria-modal="true">
   <h3 id="dlgT"></h3><div id="dlgB"></div>
   <a id="dlgL" class="dlgLink" target="_blank" rel="noopener" hidden></a>
-  <a id="dlgRef" class="dlgLink dlgRef" target="_blank" rel="noopener" hidden></a>
+  <div id="dlgRefs" class="dlgRefs" hidden></div>
   <div class="row2"><button class="pb" id="dlgGo">공통에서 수량 늘리기</button>
     <button class="pb" id="dlgCopy" hidden>주소 복사</button>
     <a class="pb on" id="dlgOpen" target="_blank" rel="noopener" hidden>견적 그대로 열기</a>
@@ -726,9 +733,19 @@ function dialog(t,b,id,url,basis){
     C.hidden=false; C.textContent='주소 복사'; C.dataset.url=full;
     X.classList.remove('on');                              // 강조는 "견적 그대로 열기" 쪽에
   } else { L.hidden=true; C.hidden=true; O.hidden=true; X.classList.add('on'); }
-  const RF=document.getElementById('dlgRef');       // 근거 문서로 보내는 링크
-  if(basis){ RF.href=basis.url; RF.textContent=basis.ref; RF.hidden=false; }
-  else RF.hidden=true;
+  const RF=document.getElementById('dlgRefs');      // 근거 문서로 보내는 링크(여러 개일 수 있다)
+  RF.textContent='';
+  if(basis&&basis.length){
+    const lab=document.createElement('div'); lab.className='rlab'; lab.textContent='근거';
+    RF.appendChild(lab);
+    basis.forEach(r=>{
+      const a=document.createElement('a');
+      a.href=r.url; a.target='_blank'; a.rel='noopener'; a.textContent=r.ref;
+      if(r.note){ const n=document.createElement('small'); n.textContent=r.note; a.appendChild(n); }
+      RF.appendChild(a);
+    });
+    RF.hidden=false;
+  } else RF.hidden=true;
   dlgTarget=id; document.getElementById('dlgGo').hidden=(id==null);
   mask.classList.add('on'); document.getElementById('dlgX').focus();
 }
@@ -1002,8 +1019,9 @@ const $=id=>document.getElementById(id);
 /* 인당 지원금액
    · 상한 40,000원 — 이것만 실제 제한이다. 넘겨 적으면 40,000원으로 맞춘다.
      금액의 출처는 「인천광역시 교육비특별회계 세출예산 집행지침」의 업무추진비(230목) 공통기준이고,
-     화면이 가리키는 문서는 최신 「(공립) 2026학년도 학교회계 예산편성 기본지침」이다(대표 지정).
-     그 지침 본문에는 금액이 없고 집행지침을 가리킨다 — 연결고리는 app.md 에 적어 뒀다.
+     학교가 따르는 것은 「(공립) 2026학년도 학교회계 예산편성 기본지침」이다.
+     편성지침에는 금액이 없고 집행지침을 가리키므로 **안내창에 둘 다 건다** — 자세한 것은
+     .claude/rules/app.md 참고.
      ⚠ 2024학년도 학교회계 지침에는 "1인당 3만원"이 적혀 있었지만, 2025학년도 개정에서 그 숫자를
      빼고 집행지침을 가리키도록 바뀌었다(개정 사유 "집행범위 일치"). **숫자의 출처가 옮겨간 것이다.**
      그래서 3만원이 아니라 4만원이 맞다 — 자세한 경위는 .claude/rules/app.md 참고.
@@ -1011,11 +1029,22 @@ const $=id=>document.getElementById(id);
    · 500원 단위로 정리한다(계산을 깔끔하게 하려는 것이고 규칙이 아니다). */
 const PER_MAX=40000, PER_STEP=500;
 /* 인당 상한의 근거. 문구와 링크를 한 곳에 모아 둔다 — 근거가 바뀌면 여기만 고친다.
-   링크는 파일이 아니라 **그 문서가 올라와 있는 글 주소**를 쓴다(대표 지시). */
+   링크는 파일이 아니라 **그 문서가 올라와 있는 글 주소**를 쓴다(대표 지시).
+   **문서가 둘이다**: 학교가 따르는 것은 편성지침인데, 그 지침에는 금액이 없고
+   "세출예산 집행지침상 집행범위 내에서 편성한다"고만 되어 있다. 40,000원이라는 숫자는
+   집행지침에 있다. 그래서 둘 다 걸어야 근거가 끊기지 않는다.
+   (2025·2026년도 집행지침은 교육청 게시판에 올라와 있지 않다 — 편성지침만 매년 올라오고
+   집행지침은 2024년 일부개정본이 마지막이자 현재 유효한 최신본이다.) */
 const PER_BASIS={
   why:'간담회 등 접대비는 특별한 사유가 없는 한 1인 1회당 40,000원 이하로 집행해요.',
-  ref:'(공립) 2026학년도 학교회계 예산편성 기본지침',
-  url:'https://www.ice.go.kr/people/na/ntt/selectNttInfo.do?nttSn=3350056&mi=10518'
+  refs:[
+    {ref:'(공립) 2026학년도 학교회계 예산편성 기본지침',
+     note:'학교가 따르는 최신 편성 근거예요',
+     url:'https://www.ice.go.kr/people/na/ntt/selectNttInfo.do?nttSn=3350056&mi=10518'},
+    {ref:'2024년도 인천광역시교육비특별회계 세출예산 집행지침(일부개정)',
+     note:'1인 1회 40,000원이 여기에 적혀 있어요',
+     url:'https://www.ice.go.kr/people/na/ntt/selectNttInfo.do?nttSn=3293944&mi=10518'}
+  ]
 };
 function fixPer(v){
   return Math.min(PER_MAX, Math.max(0, Math.round(v/PER_STEP)*PER_STEP));
@@ -1036,7 +1065,7 @@ function fixPer(v){
     if(raw>PER_MAX)
       dialog('인당 지원금액을 초과하였습니다 !',
         '40,000원 이하로 다시 조정해 주세요.\n\n'
-        +PER_BASIS.why, null, null, PER_BASIS);
+        +PER_BASIS.why, null, null, PER_BASIS.refs);
     else
       dialog('500원 단위로 맞췄어요',
         '계산을 깔끔하게 하려고 500원 단위로 정리했어요. 다시 고치셔도 됩니다.', null);
