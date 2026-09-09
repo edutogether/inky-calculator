@@ -219,3 +219,18 @@ describe('시나리오 9 — 인당 지원금액(#mCap)과 지급액(#mPer)의 �
     expect(win.document.activeElement).toBe(win.document.getElementById('mCap'));
   });
 });
+
+describe('시나리오 10 — 부스 이름의 AI 표기가 탭과 목록 헤더에서 같다', () => {
+  /* app.md "알려진 것" 항목 — 2026-09-10에 대표님 확인 후 처리(둘 다 AI 없이).
+   * 탭·합계는 NICK(짧은 이름)을 쓰고, 부스 목록 헤더는 항목 데이터의 g(전체 이름)를
+   * 그대로 쓴다 — 이 둘이 같은 글자여야 같은 부스를 다르게 부르는 일이 없다. */
+  it('①②의 데이터 이름(g)과 탭 이름(NICK)이 AI 유무까지 정확히 같다', () => {
+    const win = loadApp();
+    for (const mark of ['①', '②']) {
+      const groupName = ev(win, `D.find(it=>it.g.startsWith(${JSON.stringify(mark)})).g`);
+      const nick = ev(win, `NICK[${JSON.stringify(mark)}]`);
+      expect(groupName).toBe(`${mark} ${nick}`);
+      expect(groupName).not.toContain('AI');
+    }
+  });
+});
