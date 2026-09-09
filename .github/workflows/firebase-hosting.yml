@@ -12,11 +12,14 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # v4 는 Node.js 20 위에서 도는 액션이라 러너가 24로 강제 실행하며 경고를 띄웠다.
+      # v7 부터 액션 자체가 node24 를 쓴다(runs.using: node24) — 그래서 경고가 사라진다.
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          # 검사 스크립트를 돌릴 Node. 20 은 2026-04 로 지원이 끝나 러너와 같은 24 로 맞춘다.
+          node-version: '24'
 
       - name: CSP 해시가 index.html 과 맞는지 검사
         run: node scripts/check-csp.js
