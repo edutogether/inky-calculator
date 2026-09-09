@@ -151,7 +151,10 @@ input[type=radio]{accent-color:var(--acc);width:15px;height:15px;cursor:pointer}
 .lab{color:var(--mut);font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
 .gauge{height:7px;background:var(--sunk);border-radius:99px;margin:11px 0 7px;overflow:hidden}
 .gauge i{display:block;height:100%;background:var(--good);border-radius:99px;transition:width .25s}
-.gauge.w i{background:var(--warn)} .gauge.o i{background:var(--over)}
+/* 막대 색은 집행률 색과 같은 구간을 쓴다(rateClass). 규칙을 두 곳에 적으면 한쪽만 바뀐다 —
+   scripts/check-signs.js 가 두 색이 같은 토큰인지 배포 전에 대조한다. */
+.gauge.r-over i{background:var(--over)}   .gauge.r-good i{background:var(--good)}
+.gauge.r-warn i{background:var(--warn2)}  .gauge.r-low  i{background:var(--dim)}
 #bar{width:0}
 /* 합계 밑 요약 · 구분별 소계 : 한 줄에 한 항목, 숫자는 오른쪽 끝에 정렬 */
 .sum,.brk{display:flex;flex-direction:column;gap:6px}
@@ -650,9 +653,9 @@ function render(){
       +`<b>${F(Math.abs(rest))}원이 ${rest<0?'모자라요':'남아요'}</b>.`;
   LAST_TOT=tot;
   document.getElementById('tot').innerHTML=F(tot)+'<small>원</small>';
-  const pct=Math.min(100,tot/BUDGET*100), g=document.getElementById('gauge');
-  document.getElementById('bar').style.width=pct+'%';
-  g.className='gauge'+(tot>BUDGET?' o':pct>92?' w':'');
+  const rate=tot/BUDGET*100, g=document.getElementById('gauge');
+  document.getElementById('bar').style.width=Math.min(100,rate)+'%';   // 막대 길이는 100%에서 멈춘다
+  g.className='gauge'+rateClass(rate);        // 색은 집행률과 같은 판정을 쓴다
   const d=BUDGET-tot;
   document.getElementById('sum').innerHTML=
      `<div><span>물품</span><span class="v">${F(goods)}원</span></div>`

@@ -49,6 +49,25 @@ const over = html.match(/예산 초과<\/span><span class="v ([a-z]+)"/);
 if (!over) problems.push("'예산 초과' 줄을 찾지 못했습니다.");
 else if (over[1] !== 'no') problems.push("'예산 초과'에 경고색이 없습니다 (class=\"v " + over[1] + '").');
 
+/* 집행률 색과 게이지 막대 색이 같은 구간·같은 색을 쓰는지.
+   전에는 막대만 `pct>92` 라는 다른 규칙을 써서, 98.9%에서 숫자는 초록인데 막대는 주황이었다 —
+   같은 화면이 같은 사실을 두고 다른 말을 하고 있었다. 규칙이 두 곳에 적히면 또 어긋난다. */
+console.log('\n집행률 색 ↔ 게이지 막대 색');
+const bands = ['r-over', 'r-good', 'r-warn', 'r-low'];
+for (const b of bands) {
+  const text = html.match(new RegExp('\\.sum \\.rate\\.' + b + '\\{color:var\\((--[a-z0-9]+)\\)'));
+  const bar = html.match(new RegExp('\\.gauge\\.' + b + '\\s*i\\{background:var\\((--[a-z0-9]+)\\)'));
+  if (!text) { problems.push('집행률의 ' + b + ' 색 규칙을 찾지 못했습니다.'); continue; }
+  if (!bar) { problems.push('게이지 막대의 ' + b + ' 색 규칙을 찾지 못했습니다 — 두 색이 갈라졌습니다.'); continue; }
+  const same = text[1] === bar[1];
+  console.log('  ' + b.padEnd(8) + ' 집행률 ' + text[1].padEnd(8) + ' / 막대 ' + bar[1].padEnd(8) + (same ? ' 일치' : ' ✘ 다름'));
+  if (!same) problems.push(b + ' 의 색이 다릅니다 — 집행률 ' + text[1] + ' vs 게이지 ' + bar[1] + '.');
+}
+if (!/g\.className='gauge'\+rateClass\(/.test(html))
+  problems.push('게이지가 rateClass() 를 쓰지 않습니다 — 색 판정이 두 군데로 갈라졌습니다.');
+if (/pct>92|\.gauge\.w\b|\.gauge\.o\b/.test(html))
+  problems.push('게이지에 옛 규칙(pct>92 / .gauge.w / .gauge.o)이 남아 있습니다.');
+
 if (problems.length) {
   console.error('\n부호 검사 실패\n');
   problems.forEach(p => console.error('  - ' + p));
