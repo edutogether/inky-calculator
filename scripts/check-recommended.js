@@ -27,6 +27,12 @@ function grab(re, what) {
 }
 
 const D = JSON.parse(grab(/const D=(\[[\s\S]*?\]);\n/, '항목 데이터(const D)'));
+if (D.length === 0) {
+  // §21-1 — 대상이 0건이면 아래 forEach 는 전부 조용히 통과한다(검사한 게 아니라 아무것도
+  // 안 본 것). 항목 데이터가 통째로 비면 배포를 막아야 한다.
+  console.error('const D 가 빈 배열입니다 — 검사할 항목이 0개면 이 검사는 아무것도 못 봅니다.');
+  process.exit(1);
+}
 const BUDGET = Number(grab(/const BUDGET=(\d+)/, '예산(BUDGET)'));
 const RATIO = Number(grab(/const MEET_MAX_RATIO=([\d.]+);/, '협의회비 상한(MEET_MAX_RATIO)'));
 const GOAL_LOW = Number(grab(/const PER_GOAL_LOW=(\d+)/, '인당 목표선(PER_GOAL_LOW)'));

@@ -234,3 +234,38 @@ describe('시나리오 10 — 부스 이름의 AI 표기가 탭과 목록 헤더
     }
   });
 });
+
+describe('시나리오 11 — 가져오기(엑셀)로 들어온 조작된 값도 걸러낸다', () => {
+  /* 2026-09-10 종합감사에서 발견 — applyState() 는 어제 int0()·fixPer() 로 검증하도록
+   * 고쳤는데(시나리오 8), 같은 문제(음수·소수 수량)가 "가져오기"(엑셀 업로드) 경로에는
+   * 그대로 남아 있었다. 엑셀 셀도 사람이 손으로 고칠 수 있는 값이라 같은 규칙을 적용했다. */
+  it('음수 수량은 0으로, 협의회비 지급액은 fixPer 규칙(상한 40,000원)으로 정리된다', async () => {
+    const win = loadApp();
+    const rows = [
+      ['공통', '포켓 Wi-Fi', '코리아와이파이 5G 10GB (U50)', '5G · 10GB/일', -7, 20900, -146300],
+      ['협의회비', '협의회 참석 지원', '', '15명 × 2회', '', -999999, ''],
+    ];
+    ev(win, `window.XLSX = { read: () => ({SheetNames:['S'],Sheets:{S:{}}}),
+      utils: { sheet_to_json: () => (${JSON.stringify(rows)}) } }`);
+    const fakeFile = { name: 'test.xlsx', arrayBuffer: async () => new ArrayBuffer(0) };
+    await win.document.getElementById('fImp').onchange({ target: { files: [fakeFile] } });
+
+    expect(ev(win, "D.find(it=>it.n==='포켓 Wi-Fi').qty")).toBe(0);   // -7 → 0
+    expect(ev(win, "D.find(it=>it.n==='포켓 Wi-Fi').on")).toBe(true); // 그래도 항목은 반영된다
+    expect(ev(win, 'M.per')).toBe(0);                                  // -999999 → fixPer → 0
+    expect(ev(win, 'M.n')).toBe(15);
+    expect(ev(win, 'M.c')).toBe(2);
+  });
+
+  it('소수 수량은 내림 처리된다(3.7 → 3)', async () => {
+    const win = loadApp();
+    const rows = [
+      ['공통', '포켓 Wi-Fi', '코리아와이파이 5G 10GB (U50)', '5G · 10GB/일', 3.7, 20900, 77330],
+    ];
+    ev(win, `window.XLSX = { read: () => ({SheetNames:['S'],Sheets:{S:{}}}),
+      utils: { sheet_to_json: () => (${JSON.stringify(rows)}) } }`);
+    const fakeFile = { name: 'test.xlsx', arrayBuffer: async () => new ArrayBuffer(0) };
+    await win.document.getElementById('fImp').onchange({ target: { files: [fakeFile] } });
+    expect(ev(win, "D.find(it=>it.n==='포켓 Wi-Fi').qty")).toBe(3);
+  });
+});

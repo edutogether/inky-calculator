@@ -964,13 +964,15 @@ document.getElementById('fImp').onchange=async e=>{
       const nm=String(r[1]||'').trim(), pt=String(r[2]||'').trim();
       if(nm==='협의회 참석 지원'){
         const mm=String(r[3]||'').match(/(\d+)명 × (\d+)회/);
-        meet={per:Number(r[5])||0, n:mm?+mm[1]:null, c:mm?+mm[2]:null};
+        // 엑셀 셀은 사람이 손으로 고칠 수 있는 값이다 — applyState() 와 같은 규칙으로
+        // 음수·소수·상한 초과를 걸러낸다(int0·fixPer, 2026-09-10 감사에서 발견해 정정).
+        meet={per:fixPer(int0(r[5])), n:mm?+mm[1]:null, c:mm?+mm[2]:null};
         return;
       }
       const it=D.find(d=>d.n===nm); if(!it)return;
       const k=it.o.findIndex(o=>o.t===pt);
       const q=Number(r[4]);
-      picks.push({it, sel:k>=0?k:null, qty:Number.isFinite(q)?q:null});
+      picks.push({it, sel:k>=0?k:null, qty:Number.isFinite(q)?Math.max(0,Math.floor(q)):null});
     });
     if(!picks.length){
       fail('견적으로 알아볼 수 있는 줄이 없어요',
