@@ -2,14 +2,13 @@
 # 배포 전에 CSP 해시 검사를 먼저 돌린다 — index.html 을 고치고 firebase.json 의 해시를
 # 갱신하지 않은 채 배포하면 호스팅된 화면이 통째로 죽기 때문에, 그 경우 배포를 멈춘다.
 #
-# test 잡과 deploy 잡을 나눈 이유(COMMON_STANDARDS §23, 2026-09-10):
+# test/changes/deploy 세 잡으로 나눈 이유(COMMON_STANDARDS §23, 2026-09-10, §23-3 정정):
 # 문서(.md·_docs/·.claude/) 한두 줄만 고쳐도 매번 배포까지 돌고 있었다. 배포는
-# "사용자에게 보이는 변화가 있을 때만" 돌아야 하는데, 이 워크플로가 하나뿐이라
-# 워크플로 전체에 경로 필터를 걸면 **검사(test)까지 같이 꺼진다** — tests/scenarios.test.js
-# 는 문서가 아니라 index.html 만 보므로 원래 안전하지만, 다른 검사 스크립트가 문서를
-# 대상으로 삼게 되는 날이 오면 그 검사까지 조용히 안 도는 사고가 난다(§21-6). 그래서
-# 워크플로 트리거에는 경로 필터를 두지 않고 — test 잡은 모든 push에 항상 돈다 —
-# **deploy 잡 안에서만** 문서 전용 변경을 걸러 배포를 생략한다.
+# "사용자에게 보이는 변화가 있을 때만" 돌아야 한다.
+# ⚠️ 처음엔 워크플로 트리거(on.push.paths-ignore)로 막으려 했는데, 그건 워크플로
+# 전체를 끄는 것이라 이 저장소처럼 워크플로가 하나면 **검사(test)까지 같이 꺼진다**
+# (§21-6) — 그래서 트리거에는 필터를 두지 않고, 판정을 별도 잡(changes)으로 빼서
+# **deploy 잡에만** 그 결과를 `if:`로 건다. test·changes 둘 다 항상 돈다.
 name: Firebase Hosting 배포
 
 on:
@@ -61,42 +60,59 @@ jobs:
       - name: 시나리오 테스트 (vitest)
         run: npm test
 
-  deploy:
-    needs: test
+  # 이번 push가 배포할 만한 변경인지 판정만 한다 — 항상 돈다(문서 전용 커밋이어도 돈다).
+  changes:
     runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.check.outputs.code }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # 아래 diff 가 push 범위 전체를 봐야 하므로 전체 이력을 받는다
 
-      # 문서(.md·_docs/·.claude/)만 바뀐 커밋은 배포하지 않는다 — 사용자에게 보이는
-      # 변화가 없다(§23). before 커밋을 알 수 없으면(첫 push 등) 안전하게 배포 쪽으로 둔다.
-      - name: 배포가 필요한 변경인지 확인
-        id: changed
+      - id: check
+        name: 배포가 필요한 변경인지 확인
         run: |
+          # 🔴 판정을 못 하는 경우는 전부 배포 쪽으로 기울인다(fail-open, §21-12) —
+          # 배포를 조용히 건너뛰면 "배포가 안 됐는데 화면은 멀쩡해 보이는" 상태를
+          # 우리 손으로 만드는 것이라, 잘못 판정했을 때의 대가가 훨씬 크다.
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "사유: workflow_dispatch 수동 실행 — 항상 배포한다"
-            echo "deploy=true" >> "$GITHUB_OUTPUT"
+            echo "사유: workflow_dispatch 수동 실행 — 배포한다"
+            echo "code=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           before="${{ github.event.before }}"
           if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ]; then
-            echo "사유: 이전 커밋을 알 수 없음(새 브랜치의 첫 push 등) — 안전하게 배포한다"
-            echo "deploy=true" >> "$GITHUB_OUTPUT"
+            echo "사유: 이전 커밋을 알 수 없음(새 브랜치의 첫 push 등) — 배포한다"
+            echo "code=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          git diff --name-only "$before" "${{ github.sha }}" > /tmp/changed.txt
           echo "바뀐 파일 목록 (${before}..${{ github.sha }}):"
-          git diff --name-only "$before" "${{ github.sha }}" | tee /tmp/changed.txt
+          cat /tmp/changed.txt
+          if [ ! -s /tmp/changed.txt ]; then
+            echo "사유: 바뀐 파일이 0개(빈 diff) — 배포한다"
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # index.html 은 문서가 아니라 제품 파일이다 — 이 정규식에 걸리지 않아야 한다.
+          # 문서와 코드가 섞인 커밋도 이 grep 이 코드 파일을 하나라도 찾으면 배포로 간다.
           if grep -vE '(\.md$|^_docs/|^\.claude/)' /tmp/changed.txt | grep -q .; then
             echo "사유: 문서 이외의 파일이 바뀜 — 배포한다"
-            echo "deploy=true" >> "$GITHUB_OUTPUT"
+            echo "code=true" >> "$GITHUB_OUTPUT"
           else
-            echo "사유: 문서만 바뀜 — 배포를 생략한다"
-            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            echo "사유: 문서(.md·_docs/·.claude/)만 바뀜 — 배포를 생략한다"
+            echo "code=false" >> "$GITHUB_OUTPUT"
           fi
 
+  deploy:
+    needs: [test, changes]
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
       - name: Firebase Hosting 에 배포
-        if: steps.changed.outputs.deploy == 'true'
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_INKY_CALCULATOR }}
@@ -107,9 +123,7 @@ jobs:
       # 두 주소를 다 본다: 사람들이 쓰는 것은 공식 주소이고, Firebase 기본 주소와 결과가
       # 갈리면 그건 커스텀 도메인 쪽 설정만 틀어졌다는 뜻이라 그 자체가 잡아야 할 신호다.
       - name: 보안 헤더 확인 — 공식 주소
-        if: steps.changed.outputs.deploy == 'true'
         run: node scripts/check-headers.js https://calc.edutogether.kr/
 
       - name: 보안 헤더 확인 — Firebase 기본 주소
-        if: steps.changed.outputs.deploy == 'true'
         run: node scripts/check-headers.js https://inky-calculator.web.app/
