@@ -10,7 +10,9 @@
   `inky-calculator`)이 서빙하고, `https://inky-calculator.web.app` 으로도 같은 것이 열린다.
 - 옛 주소 `edutogether.github.io/inky-calculator`(GitHub Pages)는 **내리는 중이다.**
   코드·문서에는 더 이상 남아 있지 않다. 되살릴 일이 없다 — 새로 쓰지 말 것.
-- 외부 리소스는 cdnjs의 xlsx / html2canvas / jspdf + Google Fonts **뿐이어야 한다.**
+- 외부 리소스는 **cdnjs의 xlsx(버전 고정, SRI `integrity`·`crossorigin` 걸림) + Google Fonts
+  뿐이어야 한다.** html2canvas·jspdf는 PDF 기능을 없애며 함께 지웠다(되살리지 말 것). 구글
+  폰트 CSS는 브라우저마다 다른 바이트를 돌려주는 리소스라 SRI를 걸 수 없다 — 걸려고 하지 말 것.
   (과거 원본에 `lc.getunicorn.org` 스크립트가 섞여 있었다 — 기기의 VPN류 앱이 주입한 것으로 추정, 제거했다.
   **주입원은 아직 이 PC에서 동작 중이다** — 이 PC의 브라우저로 페이지를 열면 지금도 그 스크립트가
   DOM에 끼어든다. 서버가 주는 파일에는 없다. 브라우저로 검증할 때 이걸 앱의 문제로 착각하지 말 것.)
@@ -107,11 +109,24 @@ CSP가 차단한다. 스타일은 `<style>` 블록에 규칙으로 넣고, 핸�
 
 ## 명령
 
-- 빌드·번들·의존성 설치 **없음**(단일 정적 파일). 검사는 `node scripts/check-csp.js` 하나뿐이다.
+- **배포 산출물(`index.html`)은 빌드·번들 없음.** `package.json`은 검사 도구(vitest·
+  `scripts/check-*.js`)를 위한 것이라 `npm ci`로 devDependencies를 받아야 검사가 돈다.
+- 검사(배포 워크플로가 이 순서 그대로 돈다):
+  ```
+  npm ci
+  node scripts/check-csp.js          # 인라인 <style>/<script> 해시가 firebase.json과 맞는지
+  node scripts/check-recommended.js  # 첫 화면(권장안)이 상한·목표선을 지키는지
+  node scripts/check-signs.js        # 돈 부호(+/−)·집행률/게이지 색 판정
+  node scripts/check-contrast.js     # 캡션 글자가 WCAG AA 대비를 지키는지
+  npm test                            # tests/scenarios.test.js — index.html을 jsdom에 그대로 실행
+  ```
 - 배포: `main`에 push → **Firebase Hosting**(GitHub Actions, `.github/workflows/firebase-hosting.yml`).
-- 손으로 배포: `node scripts/check-csp.js && firebase deploy --only hosting --project inky-calculator`
+- 손으로 배포: 위 검사를 전부 통과시킨 뒤
+  `firebase deploy --only hosting --project inky-calculator`.
   배포 로그의 파일 수가 **`found 1 files`** 인지 볼 것(`index.html` 하나만 올라가야 한다).
 - 배포 뒤 확인: `node scripts/check-headers.js https://calc.edutogether.kr/`
   보안 헤더 5종과 `Cache-Control: no-cache` 가 실제 응답에 있는지 본다. 워크플로도 배포 직후 이걸
   돌리고, 하나라도 빠지면 배포를 실패로 표시한다 — **헤더가 이번 이전의 목적이기 때문이다.**
+- **롤백이 필요하면** [`_docs/ops/rollback.md`](_docs/ops/rollback.md)를 따른다 —
+  `git reset --hard`나 `push --force`를 쓰지 않는다.
 - 커밋 메시지 형식: `type: 한글 설명 (승인 Bumm M/D)` — type은 feat/fix/docs/chore/refactor/test.

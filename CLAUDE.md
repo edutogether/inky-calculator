@@ -12,7 +12,9 @@
 - **라이브**: https://calc.edutogether.kr (Firebase Hosting, 프로젝트·사이트 모두 `inky-calculator`.
   `https://inky-calculator.web.app` 으로도 같은 것이 열린다)
 - **클로드 아티팩트**: https://claude.ai/code/artifact/97501810-a6b8-4174-a488-a58cb62cb0f8
-- **구성**: `index.html` **한 파일이 전부다.** 빌드·번들·의존성 설치 없음. 커밋하면 GitHub Pages가 그대로 서빙한다.
+- **구성**: `index.html` **한 파일이 전부다** — 배포 산출물은 이 파일 하나뿐이다.
+  나머지(`package.json`·`scripts/`·`tests/`)는 배포 전 검사(vitest·`check-*.js`)를 돌리기 위한
+  개발 도구다. `main`에 push하면 GitHub Actions가 그 검사를 돌린 뒤 Firebase Hosting에 배포한다.
 - **⚠️ 수명**: **2026-11-15까지만 필요하다**(대표 결정). 그날 예약 작업이 자동으로 Pages를 내리고
   저장소를 아카이브한다(예약 작업 `inky-calculator-archive`). 그 전까지만 운영한다.
 
@@ -50,22 +52,28 @@
 
 ## 자주 틀리는 것
 
-- **캐시**: GitHub Pages가 HTML에 `Cache-Control: max-age=600`을 준다. Safari가 특히 옛 화면을
-  오래 붙잡는다. 그래서 `.nojs` 카드의 Safari/Chrome 링크에 **버전 값(`?v=YYYYMMDDx`)** 을 박아 둔다 —
-  **내용을 바꿔 배포할 때마다 이 값을 올릴 것.** 안 올리면 공유한 파일에서 옛 화면이 열린다.
+- **캐시 버전 값(`?v=…`)은 없어졌다 — 다시 만들지 말 것.** GitHub Pages 시절 캐시를 깨려고
+  쓰던 장치인데, Firebase Hosting의 `Cache-Control: no-cache` 헤더가 대신하면서 걷어냈다
+  (`.claude/rules/app.md`의 "`?v=` 캐시 버전 값을 걷어낸 이유" 절 참고). 캐시 문제가 보이면
+  버전 값을 만들지 말고 `node scripts/check-headers.js https://calc.edutogether.kr/`로
+  응답 헤더를 확인한다.
 - **줄바꿈**: 이 파일은 git이 CRLF로 체크아웃한다. 스크립트로 여러 줄 문자열을 치환할 땐
   먼저 LF로 정규화하지 않으면 매칭이 조용히 실패한다.
 - **정체불명 스크립트**: 최초 원본에 `lc.getunicorn.org` 스크립트가 섞여 있었다(기기의 VPN류 앱이
-  주입한 것으로 추정). 제거했다. 외부 스크립트는 cdnjs의 xlsx/html2canvas/jspdf와 Google Fonts뿐이어야 한다.
+  주입한 것으로 추정). 제거했다. **외부 스크립트는 cdnjs의 xlsx(SRI `integrity` 걸림)와
+  Google Fonts뿐이어야 한다** — html2canvas·jspdf는 PDF 기능을 없애며 함께 지웠다(되살리지 말 것).
 - **아티팩트와 호스팅은 사본 두 개다.** 호스팅 `index.html`을 고친 뒤, `<body>`~`</body>` 사이를
   잘라 아티팩트로 다시 발행해야 양쪽이 같아진다(아티팩트는 `<html>/<head>/<body>` 태그를 넣으면 안 됨).
 
 ## 명령
 
-- 테스트·린트·빌드 **없음**(단일 정적 파일).
+- 검사: `npm ci && node scripts/check-csp.js && node scripts/check-recommended.js
+  && node scripts/check-signs.js && node scripts/check-contrast.js && npm test`
+  (배포 워크플로가 배포 전에 전부 돌린다 — 순서는 `.github/workflows/firebase-hosting.yml` 참고).
 - 배포: `main`에 push하면 Firebase Hosting에 자동 반영(GitHub Actions).
-  손으로 하려면 `node scripts/check-csp.js && firebase deploy --only hosting --project inky-calculator`.
+  손으로 하려면 위 검사를 통과시킨 뒤 `firebase deploy --only hosting --project inky-calculator`.
 - 확인: `node scripts/check-headers.js https://calc.edutogether.kr/`
+- 롤백: [`_docs/ops/rollback.md`](_docs/ops/rollback.md).
 
 ## 대표와의 소통 경로
 
