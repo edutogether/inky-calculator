@@ -125,7 +125,8 @@ CSP가 차단한다. 스타일은 `<style>` 블록에 규칙으로 넣고, 핸�
   `firebase deploy --only hosting --project inky-calculator`.
   배포 로그의 파일 수가 **`found 1 files`** 인지 볼 것(`index.html` 하나만 올라가야 한다).
 - 배포 뒤 확인: `node scripts/check-headers.js https://calc.edutogether.kr/`
-  보안 헤더 5종과 `Cache-Control: no-cache` 가 실제 응답에 있는지 본다. 워크플로도 배포 직후 이걸
+  보안 헤더(CSP·X-Frame-Options·X-Content-Type-Options·Referrer-Policy·Permissions-Policy·
+  Strict-Transport-Security)와 `Cache-Control: no-cache` 가 실제 응답에 있는지 본다. 워크플로도 배포 직후 이걸
   돌리고, 하나라도 빠지면 배포를 실패로 표시한다 — **헤더가 이번 이전의 목적이기 때문이다.**
 - **롤백이 필요하면** [`_docs/ops/rollback.md`](_docs/ops/rollback.md)를 따른다 —
   `git reset --hard`나 `push --force`를 쓰지 않는다.

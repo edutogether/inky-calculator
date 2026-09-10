@@ -24,6 +24,10 @@ const REQUIRED = [
   ['referrer-policy', () => null],
   ['permissions-policy', () => null],
   ['cache-control', v => (/no-cache|no-store/.test(v) ? null : `재방문자가 옛 화면을 받습니다 (지금: ${v})`)],
+  // Firebase Hosting이 커스텀 도메인에 기본으로 실어 준다(firebase.json 설정 아님) —
+  // 이 앱이 직접 다는 헤더는 아니지만, 다른 호스팅으로 옮기거나 플랫폼 기본값이
+  // 바뀌면 조용히 빠질 수 있어 여기서 계속 확인한다(2026-09-10 감사에서 추가).
+  ['strict-transport-security', v => (/max-age=\d+/.test(v) ? null : 'max-age 가 없습니다')],
 ];
 
 /* 배포 직후에는 DNS·Hosting 반영이 잠깐 늦을 수 있다. 그 일시적 실패와 "헤더가 없다"는

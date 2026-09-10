@@ -8,6 +8,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# 이 워크플로는 GITHUB_TOKEN으로 아무것도 쓰지 않는다(체크아웃만) — 최소 권한만 준다.
+permissions:
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest

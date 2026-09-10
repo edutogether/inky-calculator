@@ -5,3 +5,17 @@ firebase-debug.log
 # vitest·scripts/check-*.js 를 돌리기 위한 개발 도구(package.json)가 받는 의존성.
 # index.html 은 단일 파일로 완결되므로 이건 배포에 필요 없다.
 node_modules/
+
+# .claude/ 아래 로컬 전용 경로 — _shared/CONVENTIONS.md §7 표준.
+# .git/info/exclude 에 두면 다른 PC에서 클론하거나 Codex로 열 때 무시 설정이 따라가지 않는다.
+.claude/settings.local.json
+.claude/worktrees/
+.claude/scheduled_tasks.lock
+.claude/scheduled_tasks.json
+.claude/routines/.state/
+.claude/checkpoints/
+.claude/mailbox/
+.claude/agent-registry.json
+.claude/agent-memory-local
+.claude/first-run
+.claude/assistant-daemon-state.json
