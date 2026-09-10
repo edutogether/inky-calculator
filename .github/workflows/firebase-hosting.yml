@@ -60,6 +60,10 @@ jobs:
       - name: 시나리오 테스트 (vitest)
         run: npm test
 
+      # 카카오톡 등 공유 카드(Open Graph·Twitter Card) 태그가 <head> 에 실제로 있는지.
+      - name: 공유 카드 태그 검사
+        run: node scripts/check-og.js
+
   # 이번 push가 배포할 만한 변경인지 판정만 한다 — 항상 돈다(문서 전용 커밋이어도 돈다).
   changes:
     runs-on: ubuntu-latest
@@ -136,3 +140,8 @@ jobs:
 
       - name: 보안 헤더 확인 — Firebase 기본 주소
         run: node scripts/check-headers.js https://inky-calculator.web.app/
+
+      # og.jpg 가 실제로 200 + image/jpeg 로 서빙되고 바이트까지 로컬과 같은지.
+      # 상태 코드만 보지 않는다 — 정적 호스팅이 없는 파일에도 200 을 주는 함정이 있다.
+      - name: 공유 카드 라이브 확인
+        run: node scripts/check-og.js https://calc.edutogether.kr/

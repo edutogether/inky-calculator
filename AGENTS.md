@@ -119,12 +119,15 @@ CSP가 차단한다. 스타일은 `<style>` 블록에 규칙으로 넣고, 핸�
   node scripts/check-signs.js        # 돈 부호(+/−)·집행률/게이지 색 판정
   node scripts/check-contrast.js     # 캡션 글자가 WCAG AA 대비를 지키는지
   npm test                            # tests/scenarios.test.js — index.html을 jsdom에 그대로 실행
+  node scripts/check-og.js           # 카카오톡 공유 카드(og:*·twitter:*) 태그가 <head>에 있는지
   ```
 - 배포: `main`에 push → **Firebase Hosting**(GitHub Actions, `.github/workflows/firebase-hosting.yml`).
 - 손으로 배포: 위 검사를 전부 통과시킨 뒤
   `firebase deploy --only hosting --project inky-calculator`.
-  배포 로그의 파일 수가 **`found 1 files`** 인지 볼 것(`index.html` 하나만 올라가야 한다).
-- 배포 뒤 확인: `node scripts/check-headers.js https://calc.edutogether.kr/`
+  배포 로그의 파일 수가 **`found 2 files`** 인지 볼 것(`index.html`·`og.jpg` 두 개만
+  올라가야 한다 — 2026-09-10 카카오톡 공유 카드 추가로 1개에서 늘었다).
+- 배포 뒤 확인: `node scripts/check-headers.js https://calc.edutogether.kr/`,
+  `node scripts/check-og.js https://calc.edutogether.kr/`(og.jpg 실제 서빙·sha256 일치)
   보안 헤더(CSP·X-Frame-Options·X-Content-Type-Options·Referrer-Policy·Permissions-Policy·
   Strict-Transport-Security)와 `Cache-Control: no-cache` 가 실제 응답에 있는지 본다. 워크플로도 배포 직후 이걸
   돌리고, 하나라도 빠지면 배포를 실패로 표시한다 — **헤더가 이번 이전의 목적이기 때문이다.**

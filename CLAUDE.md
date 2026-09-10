@@ -12,9 +12,11 @@
 - **라이브**: https://calc.edutogether.kr (Firebase Hosting, 프로젝트·사이트 모두 `inky-calculator`.
   `https://inky-calculator.web.app` 으로도 같은 것이 열린다)
 - **클로드 아티팩트**: https://claude.ai/code/artifact/97501810-a6b8-4174-a488-a58cb62cb0f8
-- **구성**: `index.html` **한 파일이 전부다** — 배포 산출물은 이 파일 하나뿐이다.
-  나머지(`package.json`·`scripts/`·`tests/`)는 배포 전 검사(vitest·`check-*.js`)를 돌리기 위한
-  개발 도구다. `main`에 push하면 GitHub Actions가 그 검사를 돌린 뒤 Firebase Hosting에 배포한다.
+- **구성**: 로직은 `index.html` **한 파일에 전부 들어 있다.** 배포 산출물은 그 파일과
+  카카오톡 공유 카드 이미지 `og.jpg`(2026-09-10 대표 지시로 추가, 정적 이미지일 뿐 로직
+  없음) 둘이다 — 배포 로그의 기대값은 `found 2 files`. 그 밖(`package.json`·`scripts/`·
+  `tests/`)은 배포 전 검사(vitest·`check-*.js`)를 돌리기 위한 개발 도구다. `main`에
+  push하면 GitHub Actions가 그 검사를 돌린 뒤 Firebase Hosting에 배포한다.
 - **⚠️ 수명**: **2026-11-15까지만 필요하다**(대표 결정). 그날 예약 작업이 자동으로 Pages를 내리고
   저장소를 아카이브한다(예약 작업 `inky-calculator-archive`). 그 전까지만 운영한다.
 
@@ -68,7 +70,8 @@
 ## 명령
 
 - 검사: `npm ci && node scripts/check-csp.js && node scripts/check-recommended.js
-  && node scripts/check-signs.js && node scripts/check-contrast.js && npm test`
+  && node scripts/check-signs.js && node scripts/check-contrast.js && npm test
+  && node scripts/check-og.js`
   (배포 워크플로가 배포 전에 전부 돌린다 — 순서는 `.github/workflows/firebase-hosting.yml` 참고).
 - 배포: `main`에 push하면 Firebase Hosting에 자동 반영(GitHub Actions).
   손으로 하려면 위 검사를 통과시킨 뒤 `firebase deploy --only hosting --project inky-calculator`.
