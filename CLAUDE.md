@@ -1,5 +1,7 @@
 # CLAUDE.md — inky-calculator (InKY Calculator)
 
+표시: 🔴 어기면 실사용자 화면이 깨지거나 개인정보가 샌다 · 🟠 중간 · 🟡 낮음 · 🟢 확인 끝남 (COMMON_STANDARDS §30)
+
 제4회 인천어린이청소년영화제(InKY) **부스 물품 구매 견적을 함께 짜는 계산기**.
 단일 HTML 파일 하나로 끝나는 도구다. 상위 원칙은 [D:\Projects\CLAUDE.md](../../CLAUDE.md) 상속 —
 여기는 이 저장소 전용 사항만 적는다.

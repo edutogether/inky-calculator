@@ -1,5 +1,7 @@
 # InKY Calculator 개별 규칙
 
+표시: 🔴 어기면 실사용자 화면이 깨지거나 개인정보가 샌다 · 🟠 중간 · 🟡 낮음 · 🟢 확인 끝남 (COMMON_STANDARDS §30)
+
 헌법(`D:\Projects\CLAUDE.md` → `_shared/CONVENTIONS.md`)에 없는 것만. 도구와 무관하게
 알아야 하는 운영 규칙은 [`AGENTS.md`](../../AGENTS.md)에 있고, 여기에는 **왜 그렇게 정했는지의
 근거와 사고 경위**를 둔다.
